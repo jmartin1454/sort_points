@@ -88,10 +88,10 @@ for i in range(len(unique)):
     # problem: the points on subsequent iso's might not be going in
     # the same direction.
 
-    # algorithm: find the closest point to point[0] on the last iso.
-    # If the that point and the next one don't point in the same
-    # direction as point[0] and point[1], then reverse the direction
-    # of this iso.
+    # algorithm: find the closest point on the last iso to point[0] on
+    # this iso.  If the that point and the previous one don't point in
+    # the same direction as point[0] and point[-1], then reverse the
+    # direction of this iso.
 
     if i>0:
         x,y,z=this_sorted_points[0]
