@@ -72,6 +72,9 @@ def sorted_points(points):
         print "There were",swaps,"swaps."
     return myspace
 
+# sort_and_output takes the data read from a COMSOL output file,
+# splits into isos, sorts, outputs to file and returns the same
+# structure with the sorted points in it.
 
 def sort_and_output(d,fnbase):
     unique=np.unique(d[3]) # get the unique values of the isolevels
@@ -100,6 +103,7 @@ def sort_and_output(d,fnbase):
             last_deltar=last_sorted_points[nnindex]-last_sorted_points[nnindex-1]
             if np.dot(this_deltar,last_deltar)<0:
                 this_sorted_points=this_sorted_points[::-1]
+
         last_sorted_points=this_sorted_points
 
         iso_level=np.full((len(this_sorted_points),1),value)
@@ -131,7 +135,7 @@ innerouter=np.concatenate((alldinner,alldouter))
 
 #with open('sortedPoints.dat') as inputfile:
 #    d2=np.loadtxt(inputfile)
-p=np.transpose(alldouter)
+p=np.transpose(innerouter)
 
 X=p[0]
 Y=p[1]
