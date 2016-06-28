@@ -26,9 +26,11 @@ parser.add_option("-o", "--outer", dest="outerfile",
 # output_file writes the redistibuted points inter seperate files for
 # each isolevel
 
-def output_file(matrix, i):
-    with open("sorted_points_o_iso_%s.txt" % i,'ab') as outputfile:
+def output_file(matrix,i,fnbase):
+    with open('sorted_points_'+fnbase+'_iso_%s.txt' % i,'w') as outputfile:
         np.savetxt(outputfile, matrix)
+
+# sorted_points sorts the points in one iso.
 
 def sorted_points(points):
     myspace=points # allocate space for the sorted points
@@ -71,55 +73,65 @@ def sorted_points(points):
     return myspace
 
 
-with open(options.innerfile) as innerstream:
-    d=np.loadtxt(innerstream,comments="%",unpack=True)
+def sort_and_output(d,fnbase):
+    unique=np.unique(d[3]) # get the unique values of the isolevels
 
-unique=np.unique(d[3])
+    for i in range(len(unique)):
+        value=unique[i]
+        print( "Processing iso level ",value)
+        iso=d[:,(d[3]==value)]  # all the points in this iso
+        points=np.transpose(iso[:3])  # np array with all the points in this iso
+        this_sorted_points=sorted_points(points)
 
-print (unique)
+        # problem: the points on subsequent iso's might not be going in
+        # the same direction.
 
-for i in range(len(unique)):
-    value=unique[i]
-    print( "Processing iso level ",value)
-    iso=d[:,(d[3]==value)]  # all the points in this iso
-    points=np.transpose(iso[:3])  # np array with all the points in this iso
-    this_sorted_points=sorted_points(points)
+        # algorithm: find the closest point on the last iso to point[0] on
+        # this iso.  If the that point and the previous one don't point in
+        # the same direction as point[0] and point[-1], then reverse the
+        # direction of this iso.
 
-    # problem: the points on subsequent iso's might not be going in
-    # the same direction.
+        if i>0:
+            x,y,z=this_sorted_points[0]
+            xs,ys,zs=np.transpose(last_sorted_points)
+            distance2=(x-xs)**2+(y-ys)**2+(z-zs)**2
+            nnindex=np.where(distance2==distance2.min())[0][0]
+            this_deltar=this_sorted_points[0]-this_sorted_points[-1]
+            last_deltar=last_sorted_points[nnindex]-last_sorted_points[nnindex-1]
+            if np.dot(this_deltar,last_deltar)<0:
+                this_sorted_points=this_sorted_points[::-1]
+        last_sorted_points=this_sorted_points
 
-    # algorithm: find the closest point on the last iso to point[0] on
-    # this iso.  If the that point and the previous one don't point in
-    # the same direction as point[0] and point[-1], then reverse the
-    # direction of this iso.
+        iso_level=np.full((len(this_sorted_points),1),value)
+        thisd=np.concatenate((this_sorted_points,iso_level),axis=1)
+        if i==0:
+            alld=thisd
+        else:
+            alld=np.concatenate((alld,thisd))
+            # save individual isos
+        output_file(this_sorted_points,value,fnbase)
 
-    if i>0:
-        x,y,z=this_sorted_points[0]
-        xs,ys,zs=np.transpose(last_sorted_points)
-        distance2=(x-xs)**2+(y-ys)**2+(z-zs)**2
-        nnindex=np.where(distance2==distance2.min())[0][0]
-        this_deltar=this_sorted_points[0]-this_sorted_points[-1]
-        last_deltar=last_sorted_points[nnindex]-last_sorted_points[nnindex-1]
-        if np.dot(this_deltar,last_deltar)<0:
-            this_sorted_points=this_sorted_points[::-1]
-    last_sorted_points=this_sorted_points
+    with open('sorted_'+fnbase+'.dat','w') as outputfile:
+        np.savetxt(outputfile,alld)
 
-    iso_level=np.full((len(this_sorted_points),1),value)
-    thisd=np.concatenate((this_sorted_points,iso_level),axis=1)
-    if i==0:
-        alld=thisd
-    else:
-        alld=np.concatenate((alld,thisd))
-    # save individual iso's of redistributed points
-    # output_file(xy,value)
+    return alld
 
-with open('sortedPoints.dat','w') as outputfile:
-    np.savetxt(outputfile,alld)
 
+with open(options.innerfile) as stream:
+    dinner=np.loadtxt(stream,comments="%",unpack=True)
+
+alldinner=sort_and_output(dinner,'inner')
+
+with open(options.outerfile) as stream:
+    douter=np.loadtxt(stream,comments="%",unpack=True)
+
+alldouter=sort_and_output(douter,'outer')
+
+innerouter=np.concatenate((alldinner,alldouter))
 
 #with open('sortedPoints.dat') as inputfile:
 #    d2=np.loadtxt(inputfile)
-p=np.transpose(alld)
+p=np.transpose(alldouter)
 
 X=p[0]
 Y=p[1]
@@ -135,6 +147,3 @@ ax.set_ylabel('y(m)')
 ax.set_zlabel('z(m)')
 plt.savefig('extracted_traces.png')
 plt.show()
-
-
-    
