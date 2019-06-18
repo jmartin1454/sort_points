@@ -67,3 +67,20 @@ print(thiscoil.b(r))
 thiscoil.set_current(i/2.0)
 print(thiscoil.b(r))
 print(thiscoil.b_prime(a/4,-a/4,0))
+
+
+# stupid test
+p0 = np.array([-0.15935262,.7,-.9])
+p1 = np.array([-0.15935262,.7,+.9])
+x=0.0
+y=0.7
+z=0.8
+i = 0.1
+print(b_segment(i,p0,p1,np.array([x,y,z])))
+print(b_segment_2(i,p0,p1,x,y,z))
+x=0.2
+y=0.7
+z=0.8
+i = 0.1
+print(b_segment(i,p0,p1,np.array([x,y,z])))
+print(b_segment_2(i,p0,p1,x,y,z))

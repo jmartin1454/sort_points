@@ -47,8 +47,8 @@ def b_segment_2(i,p0,p1,x,y,z):
     d1y=y-p1[1]
     d1z=z-p1[2]
     ell=p1-p0
-    lend0=(d0x**2+d0y**2+d0z**2)**0.5
-    lend1=(d1x**2+d1y**2+d0z**2)**0.5
+    lend0=np.sqrt(d0x**2+d0y**2+d0z**2)
+    lend1=np.sqrt(d1x**2+d1y**2+d1z**2)
     lenell=np.sqrt(ell.dot(ell))
     b_total_x=0.*x
     b_total_y=0.*y
@@ -59,7 +59,7 @@ def b_segment_2(i,p0,p1,x,y,z):
         ellcrossd0x=ell[1]*d0z-ell[2]*d0y
         ellcrossd0y=ell[2]*d0x-ell[0]*d0z
         ellcrossd0z=ell[0]*d0y-ell[1]*d0x
-        lenellcrossd0=(ellcrossd0x**2+ellcrossd0y**2+ellcrossd0z**2)**0.5
+        lenellcrossd0=np.sqrt(ellcrossd0x**2+ellcrossd0y**2+ellcrossd0z**2)
         modsintheta0=lenellcrossd0/lenell/lend0
         a=lend0*modsintheta0
         nhatx=np.divide(ellcrossd0x,lenellcrossd0,out=np.zeros_like(ellcrossd0x),where=lenellcrossd0!=0)
@@ -138,9 +138,9 @@ class coilset:
         return b_total
         
     def b_prime(self,x,y,z):
-        b_total_x=0.
-        b_total_y=0.
-        b_total_z=0.
+        b_total_x=0.*x
+        b_total_y=0.*y
+        b_total_z=0.*z
         for coilnum in range(self.ncoils):
             b_coil_x,b_coil_y,b_coil_z=self.coils[coilnum].b_prime(x,y,z)
             b_total_x=b_total_x+b_coil_x
@@ -154,7 +154,7 @@ class coilset:
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
-        ax.plot(x,y,z,'-',color='pink')
+        ax.plot(x,y,z,'-',color='black')
         
     def draw_coils(self,ax):
         for number in range(self.ncoils):

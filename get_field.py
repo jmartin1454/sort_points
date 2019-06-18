@@ -10,6 +10,7 @@
 import numpy as np
 import math
 from optparse import OptionParser
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 from mpl_toolkits.mplot3d import Axes3D
@@ -25,7 +26,7 @@ from shapely.geometry.polygon import Polygon
 
 from patch import *
 
-from mayavi.mlab import *
+from mayavi import mlab
 
 # parse command line arguments
 
@@ -144,7 +145,6 @@ for i,cnt in enumerate(u23_contours.allsegs):
     mirrored=False
     if (x[0]<0.0001):
         # mirror through yz-plane
-        print("Mirroring")
         xnew=np.concatenate((xnew,-x))
         xnew=np.concatenate((xnew,-xs))
         ynew=np.concatenate((ynew,y))
@@ -157,40 +157,43 @@ for i,cnt in enumerate(u23_contours.allsegs):
         xnew=np.append(xnew,xnew[0])
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
-    ax5.plot(xnew,ynew,znew,'.-',color='black')
-    if (i==0):
-        points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
-        mycoilset.draw_coil(i,ax5)
-        mycoilset.set_common_current(0.1)
-        print(mycoilset.b(np.array([0.,0.,0.])))
-        print(mycoilset.b_prime(0.,0.,0.))
-        xg,yg,zg=np.mgrid[-3:3:7j,-3:3:7j,-3:3:7j]
-        bxg,byg,bzg=mycoilset.b_prime(xg,yg,zg)
-        figtest=plt.figure()
-        ax=figtest.gca(projection='3d')
-        ax.quiver(xg,yg,zg,bxg*1e8,byg*1e8,bzg*1e8)
-        ##figtest=figure(bgcolor=(1.0,1.0,1.0),size=(400,400),fgcolor=(0, 0, 0))
-        ##st = mayavi.mlab.flow(XX,YY,ZZ,xx,yy,zz,line_width=4,seedtype='sphere',integration_direction='forward') #sphere is the default seed type
-        ##obj=flow(xg,yg,zg,bxg,byg,bzg)
-        ##axes(extent = [-3.0,3.0,-3.0,3.0,-3.0,3.0]) #set plot bounds
-        ##figtest.scene.z_plus_view() #adjust the view for a perspective along z (xy plane flat)
+    #ax5.plot(xnew,ynew,znew,'.-',color='black')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
+    #mycoilset.draw_coil(i,ax5)
+
     # reflect through xz-plane
     ynew=-ynew
-    ax5.plot(xnew,ynew,znew,'.-',color='red')
+    #ax5.plot(xnew,ynew,znew,'.-',color='red')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
+    #mycoilset.draw_coil(i,ax5)
     if not mirrored:
         ynew=-ynew # put it back for a sec
         # reflect separate trace through yz-plane
         xnew=-xnew
-        ax5.plot(xnew,ynew,znew,'.-',color='green')
+        # reverse the windings
+        xnew=np.flip(xnew,0)
+        ynew=np.flip(ynew,0)
+        znew=np.flip(znew,0)
+        #ax5.plot(xnew,ynew,znew,'.-',color='green')
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        #mycoilset.draw_coil(i,ax5)
         # and through the xz-plane
         ynew=-ynew
-        ax5.plot(xnew,ynew,znew,'.-',color='blue')
+        #ax5.plot(xnew,ynew,znew,'.-',color='blue')
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        #mycoilset.draw_coil(i,ax5)
 
+
+
+        
 # now for the face plates
 
-fig4 = plt.figure()
-ax6 = fig4.add_subplot(111, projection='3d')
+#fig4 = plt.figure()
+#ax6 = fig4.add_subplot(111, projection='3d')
 
 for i,cnt in enumerate(u1_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
@@ -209,15 +212,50 @@ for i,cnt in enumerate(u1_contours.allsegs):
     ynew=np.concatenate((ynew,np.flip(ys,0)))
     ynew=np.concatenate((ynew,np.flip(y,0)))
     znew=[-a_out/2]*len(ynew)
-    ax6.plot(xnew,ynew,znew,'.-',color='black')
+    #ax6.plot(xnew,ynew,znew,'.-',color='black')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
     # mirror through xy-plane
     znew=[a_out/2]*len(ynew)
-    ax6.plot(xnew,ynew,znew,'.-',color='black')
+    xnew=np.flip(xnew,0)
+    ynew=np.flip(ynew,0)
+    #ax6.plot(xnew,ynew,znew,'.-',color='black')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
     # mirror through xz-plane
     ynew=-ynew
-    ax6.plot(xnew,ynew,znew,'.-',color='black')
+    #ax6.plot(xnew,ynew,znew,'.-',color='black')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
     znew=[-a_out/2]*len(ynew)
-    ax6.plot(xnew,ynew,znew,'.-',color='black')
+    xnew=np.flip(xnew,0)
+    ynew=np.flip(ynew,0)    
+    #ax6.plot(xnew,ynew,znew,'.-',color='black')
+    points=np.array(zip(xnew,ynew,znew))
+    mycoilset.add_coil(points)
 
+
+mycoilset.draw_coils(ax5)
+mycoilset.set_common_current(0.1)
+
+figtest, (axtest1, axtest2,axtest3) = plt.subplots(nrows=3)
+
+x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
+bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
+im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+#im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
+figtest.colorbar(im,ax=axtest1)
+
+x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
+im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+#im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
+figtest.colorbar(im,ax=axtest2)
+
+y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
+im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+#im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
+figtest.colorbar(im,ax=axtest3)
 
 plt.show()
