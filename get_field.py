@@ -6,6 +6,7 @@
 # Jeff updated to triangulate and plot contours in matplotlib
 # Jeff updated to extract contours
 # June 16, 2019 Jeff updated to use patch.py classes
+# June 17, 2019 now working properly
 
 import numpy as np
 import math
@@ -34,6 +35,12 @@ parser = OptionParser()
 
 parser.add_option("-f", "--file", dest="infile",
                   default="data.txt", help="read data from file", metavar="FILE")
+
+parser.add_option("-m", "--mesh", dest="plotmesh",
+                  default=False, action="store_true", help="plot where the mesh points are", metavar="FILE")
+
+parser.add_option("-c", "--contours", dest="contours",
+                  default=False, action="store_true", help="show extracted contours", metavar="FILE")
 
 (options, args) = parser.parse_args()
 
@@ -72,63 +79,90 @@ for x,y in zip(xmid,ymid):
 print(mask)
 tri.set_mask(mask)
 
+## refiner from https://matplotlib.org/3.1.0/gallery/images_contours_and_fields/tricontour_smooth_delaunay.html
+#subdiv=3
+#refiner = UniformTriRefiner(tri)
+#tri_refi, u3_refi = refiner.refine_field(u3_outer, subdiv=subdiv)
+#tri_refi, u23_refi = refiner.refine_field(u2_outer-u3_outer, subdiv=subdiv)
+## refine inner coils too... seems to affect levels(?)
+tri_inner = Triangulation(x_inner,y_inner)
+##refiner_inner = UniformTriRefiner(tri_inner)
+##tri_inner_refi, u1_refi = refiner.refine_field(u1_inner, subdiv=subdiv)
+
+
+# scipy.interpolate attempt
+#from scipy.interpolate import griddata
+#grid_z2 = griddata(tri, u2_outer-u3_outer, (grid_x, grid_y), method='cubic')
+
 # make graphs
 
-levels = np.arange(-10.05,10.05,.1)
+current = 0.11 # amperes; design current = step in scalar potential
+maxphi = 10 # amperes; biggest you can imagine the scalar potential to be
+num = round(maxphi/current) # half the number of equipotentials
+maxlevel = (2*num-1)*current/2
+minlevel = -maxlevel
+levels = np.arange(minlevel,maxlevel,current)
+print(levels)
 
 fig, (ax1, ax2) = plt.subplots(nrows=2)
 
-
 #ax1.triplot(tri, color='0.7') # if you want to see the triangulation
 
+#u23_contours=ax1.tricontour(tri_refi,u23_refi,levels=levels)
 u23_contours=ax1.tricontour(tri,u2_outer-u3_outer,levels=levels)
-ax1.plot(x_outer, y_outer, 'ko', ms=3)
+if (options.plotmesh):
+    ax1.plot(x_outer, y_outer, 'ko', ms=1)
 ax1.axis((0,a_out/2,0,a_out/2))
+fig.colorbar(u23_contours,ax=ax1)
 
+#u3_contours=ax2.tricontour(tri_refi, u3_refi, levels=levels)
 u3_contours=ax2.tricontour(tri, u3_outer, levels=levels)
-ax2.plot(x_outer, y_outer, 'ko', ms=3)
+if (options.plotmesh):
+    ax2.plot(x_outer, y_outer, 'ko', ms=1)
 
-u1_contours=ax2.tricontour(x_inner, y_inner, u1_inner, levels=levels)
-ax2.plot(x_inner, y_inner, 'ko', ms=3)
+#u1_contours=ax2.tricontour(x_inner, y_inner, u1_inner, levels=levels)
+u1_contours=ax2.tricontour(tri_inner, u1_inner, levels=levels)
+if (options.plotmesh):
+    ax2.plot(x_inner, y_inner, 'ko', ms=1)
 ax2.axis((0,a_out/2, 0,a_out/2))
+fig.colorbar(u1_contours,ax=ax2)
 
-#plt.show()
+plt.show()
 
 ## extracting all the contours and graphing them
-#
-#fig2, (ax3, ax4) = plt.subplots(nrows=2)
-#
-## nseg=len(u23_contours.allsegs)
-#
-#for i,cnt in enumerate(u23_contours.allsegs):
-#    seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-#    x=seg[:,0]
-#    y=seg[:,1]
-#    ax3.plot(x,y,'.-',color='black')
-#ax3.axis((0,a_out/2,0,a_out/2))
-#
-#for i,cnt in enumerate(u3_contours.allsegs):
-#    seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-#    x=seg[:,0]
-#    y=seg[:,1]
-#    ax4.plot(x,y,'.-',color='black')
-#for i,cnt in enumerate(u1_contours.allsegs):
-#    seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-#    x=seg[:,0]
-#    y=seg[:,1]
-#    ax4.plot(x,y,'.-',color='black')
-#ax4.axis((0,a_out/2,0,a_out/2))
-#
-## conclusion:  the contours are all there and are ordered in the same way relative to each other
+if (options.contours):
+    fig2, (ax3, ax4) = plt.subplots(nrows=2)
 
-# draw 3D coils
+    # nseg=len(u23_contours.allsegs)
+
+    for i,cnt in enumerate(u23_contours.allsegs):
+        seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
+        x=seg[:,0]
+        y=seg[:,1]
+        ax3.plot(x,y,'.-',color='black',ms=1)
+    ax3.axis((0,a_out/2,0,a_out/2))
+
+    for i,cnt in enumerate(u3_contours.allsegs):
+        seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
+        x=seg[:,0]
+        y=seg[:,1]
+        ax4.plot(x,y,'.-',color='black',ms=1)
+    for i,cnt in enumerate(u1_contours.allsegs):
+        seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
+        x=seg[:,0]
+        y=seg[:,1]
+        ax4.plot(x,y,'.-',color='black',ms=1)
+    ax4.axis((0,a_out/2,0,a_out/2))
+
+    plt.show()
+# conclusion:  the contours are all there and are ordered in the same way relative to each other
+
+# assemble and draw 3D coils
 fig3 = plt.figure()
 ax5 = fig3.add_subplot(111, projection='3d')
 
 # rewrite using patch.py class library
-
 mycoilset=coilset()
-
 
 for i,cnt in enumerate(u23_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
@@ -192,15 +226,12 @@ for i,cnt in enumerate(u23_contours.allsegs):
         
 # now for the face plates
 
-#fig4 = plt.figure()
-#ax6 = fig4.add_subplot(111, projection='3d')
-
 for i,cnt in enumerate(u1_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
     # these go from outer to inner
     x=seg[:,0]
     y=seg[:,1]
-    # get the corresponding contour from u1
+    # get the corresponding contour from u3
     seg=u3_contours.allsegs[i][0]
     xs=seg[:,0]
     ys=seg[:,1]
@@ -236,26 +267,37 @@ for i,cnt in enumerate(u1_contours.allsegs):
 
 
 mycoilset.draw_coils(ax5)
-mycoilset.set_common_current(0.1)
 
-figtest, (axtest1, axtest2,axtest3) = plt.subplots(nrows=3)
+plt.show()
+
+
+mycoilset.set_common_current(current)
+
+figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
+
+design_field=4*pi/10*1.e-6
+delta_field=5.e-9
+min_field=design_field-delta_field
+max_field=design_field+delta_field
+print(design_field,delta_field)
 
 x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
 bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
-im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
 #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
 figtest.colorbar(im,ax=axtest1)
 
 x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
 bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
-im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
 #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
 figtest.colorbar(im,ax=axtest2)
 
 y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
 bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
-im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=1.255e-6,vmax=1.259e-6)
+im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
 #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
 figtest.colorbar(im,ax=axtest3)
+
 
 plt.show()
