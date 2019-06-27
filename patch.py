@@ -62,9 +62,9 @@ def b_segment_2(i,p0,p1,x,y,z):
         lenellcrossd0=np.sqrt(ellcrossd0x**2+ellcrossd0y**2+ellcrossd0z**2)
         modsintheta0=lenellcrossd0/lenell/lend0
         a=lend0*modsintheta0
-        nhatx=np.divide(ellcrossd0x,lenellcrossd0,out=np.zeros_like(ellcrossd0x),where=lenellcrossd0!=0)
-        nhaty=np.divide(ellcrossd0y,lenellcrossd0,out=np.zeros_like(ellcrossd0y),where=lenellcrossd0!=0)
-        nhatz=np.divide(ellcrossd0z,lenellcrossd0,out=np.zeros_like(ellcrossd0z),where=lenellcrossd0!=0)
+        nhatx=np.divide(ellcrossd0x,lenellcrossd0,out=np.zeros_like(ellcrossd0x*lenellcrossd0),where=lenellcrossd0!=0)
+        nhaty=np.divide(ellcrossd0y,lenellcrossd0,out=np.zeros_like(ellcrossd0y*lenellcrossd0),where=lenellcrossd0!=0)
+        nhatz=np.divide(ellcrossd0z,lenellcrossd0,out=np.zeros_like(ellcrossd0z*lenellcrossd0),where=lenellcrossd0!=0)
 
         pre=mu_0*i/4.0/pi*(costheta0+costheta1)
         b_total_x=np.divide(pre*nhatx,a,out=np.zeros_like(pre*nhatx),where=a!=0)

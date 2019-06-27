@@ -7,6 +7,7 @@
 # Jeff updated to extract contours
 # June 16, 2019 Jeff updated to use patch.py classes
 # June 17, 2019 now working properly
+# June 25, 2019 updates for different graphing
 
 import numpy as np
 import math
@@ -34,13 +35,27 @@ from mayavi import mlab
 parser = OptionParser()
 
 parser.add_option("-f", "--file", dest="infile",
-                  default="data.txt", help="read data from file", metavar="FILE")
+                  default="data.txt", help="read data from file",
+                  metavar="FILE")
 
 parser.add_option("-m", "--mesh", dest="plotmesh",
-                  default=False, action="store_true", help="plot where the mesh points are", metavar="FILE")
+                  default=False, action="store_true",
+                  help="plot where the mesh points are")
 
 parser.add_option("-c", "--contours", dest="contours",
-                  default=False, action="store_true", help="show extracted contours", metavar="FILE")
+                  default=False, action="store_true",
+                  help="show extracted contours")
+
+parser.add_option("-i", "--current", dest="current", default=0.1,
+                  help="design current (A) (default = 0.1)")
+
+parser.add_option("-p", "--planes", dest="planes", default=False,
+                  action="store_true",
+                  help="show field maps in three cut planes")
+
+parser.add_option("-t", "--traces", dest="traces", default=False,
+                  action="store_true",
+                  help="show 3D view of coil traces")
 
 (options, args) = parser.parse_args()
 
@@ -96,7 +111,7 @@ tri_inner = Triangulation(x_inner,y_inner)
 
 # make graphs
 
-current = 0.11 # amperes; design current = step in scalar potential
+current = float(options.current) # amperes; design current = step in scalar potential
 maxphi = 10 # amperes; biggest you can imagine the scalar potential to be
 num = round(maxphi/current) # half the number of equipotentials
 maxlevel = (2*num-1)*current/2
@@ -127,7 +142,7 @@ if (options.plotmesh):
 ax2.axis((0,a_out/2, 0,a_out/2))
 fig.colorbar(u1_contours,ax=ax2)
 
-plt.show()
+#plt.show()
 
 ## extracting all the contours and graphing them
 if (options.contours):
@@ -157,12 +172,12 @@ if (options.contours):
     plt.show()
 # conclusion:  the contours are all there and are ordered in the same way relative to each other
 
-# assemble and draw 3D coils
-fig3 = plt.figure()
-ax5 = fig3.add_subplot(111, projection='3d')
+# assemble 3D coils
 
 # rewrite using patch.py class library
 mycoilset=coilset()
+
+print("There are %d outer coils."%len(u23_contours.allsegs))
 
 for i,cnt in enumerate(u23_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
@@ -191,17 +206,13 @@ for i,cnt in enumerate(u23_contours.allsegs):
         xnew=np.append(xnew,xnew[0])
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
-    #ax5.plot(xnew,ynew,znew,'.-',color='black')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
-    #mycoilset.draw_coil(i,ax5)
 
     # reflect through xz-plane
     ynew=-ynew
-    #ax5.plot(xnew,ynew,znew,'.-',color='red')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
-    #mycoilset.draw_coil(i,ax5)
     if not mirrored:
         ynew=-ynew # put it back for a sec
         # reflect separate trace through yz-plane
@@ -210,21 +221,17 @@ for i,cnt in enumerate(u23_contours.allsegs):
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
         znew=np.flip(znew,0)
-        #ax5.plot(xnew,ynew,znew,'.-',color='green')
         points=np.array(zip(xnew,ynew,znew))
         mycoilset.add_coil(points)
-        #mycoilset.draw_coil(i,ax5)
         # and through the xz-plane
         ynew=-ynew
-        #ax5.plot(xnew,ynew,znew,'.-',color='blue')
         points=np.array(zip(xnew,ynew,znew))
         mycoilset.add_coil(points)
-        #mycoilset.draw_coil(i,ax5)
-
-
 
         
 # now for the face plates
+
+print("There are %d face coils."%len(u1_contours.allsegs))
 
 for i,cnt in enumerate(u1_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
@@ -243,37 +250,32 @@ for i,cnt in enumerate(u1_contours.allsegs):
     ynew=np.concatenate((ynew,np.flip(ys,0)))
     ynew=np.concatenate((ynew,np.flip(y,0)))
     znew=[-a_out/2]*len(ynew)
-    #ax6.plot(xnew,ynew,znew,'.-',color='black')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
     # mirror through xy-plane
     znew=[a_out/2]*len(ynew)
     xnew=np.flip(xnew,0)
     ynew=np.flip(ynew,0)
-    #ax6.plot(xnew,ynew,znew,'.-',color='black')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
     # mirror through xz-plane
     ynew=-ynew
-    #ax6.plot(xnew,ynew,znew,'.-',color='black')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
     znew=[-a_out/2]*len(ynew)
     xnew=np.flip(xnew,0)
     ynew=np.flip(ynew,0)    
-    #ax6.plot(xnew,ynew,znew,'.-',color='black')
     points=np.array(zip(xnew,ynew,znew))
     mycoilset.add_coil(points)
 
-
-mycoilset.draw_coils(ax5)
-
-plt.show()
+if (options.traces):
+    fig3 = plt.figure()
+    ax5 = fig3.add_subplot(111, projection='3d')
+    mycoilset.draw_coils(ax5)
+    plt.show()
 
 
 mycoilset.set_common_current(current)
-
-figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
 
 design_field=4*pi/10*1.e-6
 delta_field=5.e-9
@@ -281,23 +283,38 @@ min_field=design_field-delta_field
 max_field=design_field+delta_field
 print(design_field,delta_field)
 
-x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
-bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
-im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
-#im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
-figtest.colorbar(im,ax=axtest1)
+if (options.planes):
+    figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
 
-x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
-bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
-im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
-#im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
-figtest.colorbar(im,ax=axtest2)
+    x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
+    im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
+    figtest.colorbar(im,ax=axtest1)
 
-y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
-bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
-im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
-#im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
-figtest.colorbar(im,ax=axtest3)
+    x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
+    im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
+    figtest.colorbar(im,ax=axtest2)
 
+    y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
+    im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
+    figtest.colorbar(im,ax=axtest3)
+
+    plt.show()
+
+fig7, (ax71) = plt.subplots(nrows=1)
+
+points1d=np.mgrid[-1:1:101j]
+bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
+ax71.plot(points1d,by1d)
+bx1d,by1d,bz1d=mycoilset.b_prime(points1d,0.,0.)
+ax71.plot(points1d,by1d)
+bx1d,by1d,bz1d=mycoilset.b_prime(0.,0.,points1d)
+ax71.plot(points1d,by1d)
+ax71.axis((-.5,.5,-min_field,-max_field))
 
 plt.show()
