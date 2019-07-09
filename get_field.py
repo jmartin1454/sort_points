@@ -28,7 +28,7 @@ from shapely.geometry.polygon import Polygon
 
 from patch import *
 
-from mayavi import mlab
+from scipy.optimize import curve_fit
 
 # parse command line arguments
 
@@ -308,13 +308,27 @@ if (options.planes):
 
 fig7, (ax71) = plt.subplots(nrows=1)
 
+def fitfunc(x,p0,p2,p4,p6):
+    return p0+p2*x**2+p4*x**4+p6*x**6
+
+def fitgraph(xdata,ydata,ax):
+    popt,pcov=curve_fit(fitfunc,points1d[abs(points1d)<.5],by1d[abs(points1d)<.5])
+    print(popt)
+    ax.plot(points1d,fitfunc(points1d,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
+
 points1d=np.mgrid[-1:1:101j]
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
-ax71.plot(points1d,by1d)
+fitgraph(points1d,by1d,ax71)
+ax71.plot(points1d,by1d,label='$B_y(0,y,0)$')
 bx1d,by1d,bz1d=mycoilset.b_prime(points1d,0.,0.)
-ax71.plot(points1d,by1d)
+fitgraph(points1d,by1d,ax71)
+ax71.plot(points1d,by1d,label='$B_y(x,0,0)$')
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,0.,points1d)
-ax71.plot(points1d,by1d)
+fitgraph(points1d,by1d,ax71)
+ax71.plot(points1d,by1d,label='$B_y(0,0,z)$')
+
 ax71.axis((-.5,.5,-min_field,-max_field))
+ax71.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+ax71.legend()
 
 plt.show()
