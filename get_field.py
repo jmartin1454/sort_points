@@ -277,11 +277,13 @@ if (options.traces):
 
 mycoilset.set_common_current(current)
 
-design_field=4*pi/10*1.e-6
+design_field=-4*pi/10*1.e-6
+bx,by,bz=mycoilset.b_prime(0.,0.,0.)
+central_field=by
 delta_field=5.e-9
-min_field=design_field-delta_field
-max_field=design_field+delta_field
-print(design_field,delta_field)
+min_field=central_field-delta_field
+max_field=central_field+delta_field
+print(central_field,delta_field)
 
 if (options.planes):
     figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
@@ -327,7 +329,7 @@ bx1d,by1d,bz1d=mycoilset.b_prime(0.,0.,points1d)
 fitgraph(points1d,by1d,ax71)
 ax71.plot(points1d,by1d,label='$B_y(0,0,z)$')
 
-ax71.axis((-.5,.5,-min_field,-max_field))
+ax71.axis((-.5,.5,min_field,max_field))
 ax71.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 ax71.legend()
 
