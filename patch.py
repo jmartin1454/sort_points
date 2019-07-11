@@ -3,6 +3,7 @@
 
 from scipy.constants import mu_0, pi
 import numpy as np
+from Arrow3D import *
 
 def b_segment(i,p0,p1,r):
     # p0 is one end (vector in m)
@@ -79,6 +80,7 @@ def b_loop(i,points,r):
     # r is the position of interest (m)
     # returns the magnetic field as a numpy 3-array (T)
     # Note:  assumes that points[-1] to points[0] should be counted (closed loop)
+    # This is why j starts at zero in the loop below
     b_total = np.array([0,0,0])
     for j in range(len(points)):
         b_total = b_total + b_segment(i,points[j-1],points[j],r)
@@ -90,6 +92,7 @@ def b_loop_2(i,points,x,y,z):
     # x,y,z is the position of interest (m)
     # returns the magnetic field components (T)
     # Note:  assumes that points[-1] to points[0] should be counted (closed loop)
+    # This is why j starts at zero in the loop below
     b_total_x=0.*x
     b_total_y=0.*y
     b_total_z=0.*z
@@ -150,11 +153,16 @@ class coilset:
         
     def draw_coil(self,number,ax):
         coil = self.coils[number]
-        points = coil.points # + (coil.points[0],) # uncomment to force closed loop drawn
+        points = coil.points
+        points=np.append(points,[points[0]],axis=0) # force draw closed loop
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
         ax.plot(x,y,z,'-',color='black')
+        a=Arrow3D([x[0],x[1]],[y[0],y[1]],[z[0],z[1]],mutation_scale=20, 
+                  lw=3,arrowstyle="-|>",color="r")
+        ax.add_artist(a)
+        ax.text(x[0],y[0],z[0],"%d"%number,color="r")
         
     def draw_coils(self,ax):
         for number in range(self.ncoils):
