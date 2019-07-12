@@ -217,18 +217,21 @@ if (options.planes):
 
     plt.show()
 
-fig7, (ax71) = plt.subplots(nrows=1)
+fig7,(ax71)=plt.subplots(nrows=1)
 
-def fitfunc(x,p0,p2,p4,p6):
+def fiteven(x,p0,p2,p4,p6):
     return p0+p2*x**2+p4*x**4+p6*x**6
 
+def fitodd(x,p1,p3,p5,p7):
+    return p1*x+p3*x**3+p5*x**5+p7*x**7
+
 def fitgraph(xdata,ydata,ax):
-    popt,pcov=curve_fit(fitfunc,xdata[abs(xdata)<.5],ydata[abs(xdata)<.5])
+    popt,pcov=curve_fit(fiteven,xdata[abs(xdata)<.5],ydata[abs(xdata)<.5])
     print(popt)
-    ax.plot(points1d,fitfunc(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
+    ax.plot(points1d,fiteven(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
 
 print('In case you are interested, 4*pi/10 is %f'%(4.*pi/10))
-   
+
 points1d=np.mgrid[-1:1:101j]
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
 fitgraph(points1d,bz1d,ax71)
