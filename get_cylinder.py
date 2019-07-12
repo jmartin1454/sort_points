@@ -227,6 +227,8 @@ def fitgraph(xdata,ydata,ax):
     print(popt)
     ax.plot(points1d,fitfunc(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
 
+print('In case you are interested, 4*pi/10 is %f'%(4.*pi/10))
+   
 points1d=np.mgrid[-1:1:101j]
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
 fitgraph(points1d,bz1d,ax71)
