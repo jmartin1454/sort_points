@@ -10,3 +10,5 @@ Good plots with ultra-fine mesh:
 .457 and .458 are interesting.  Largest possible current still having 2 face coils. (.46666666 is largest but doesn't have great homogeneity)
 
 Next:  try quadratic spacings?
+
+./get_cylinder.py -i .001 --> shows nearly ideal behavior for z^2 and -0.5*x^2, -0.5*y^2. (g20 coil)

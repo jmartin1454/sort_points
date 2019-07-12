@@ -27,7 +27,7 @@ from shapely.geometry.polygon import Polygon
 
 from patch import *
 
-from Arrow3D import *
+from scipy.optimize import curve_fit
 
 # parse command line arguments
 
@@ -36,6 +36,21 @@ parser = OptionParser()
 parser.add_option("-f","--file",dest="infile",
                   default="cylinder-surface.txt",
                   help="read data from file",metavar="FILE")
+
+parser.add_option("-m", "--mesh", dest="plotmesh",
+                  default=False, action="store_true",
+                  help="plot where the mesh points are")
+
+parser.add_option("-i", "--current", dest="current", default=0.1,
+                  help="design current (A) (default = 0.1)")
+
+parser.add_option("-p", "--planes", dest="planes", default=False,
+                  action="store_true",
+                  help="show field maps in three cut planes")
+
+parser.add_option("-t", "--traces", dest="traces", default=False,
+                  action="store_true",
+                  help="show 3D view of coil traces")
 
 (options,args)=parser.parse_args()
 
@@ -67,29 +82,39 @@ phi_sid=np.concatenate([phi_sid,phi_pi])
 z_sid=np.concatenate([z_sid,z_pi])
 u_sid=np.concatenate([u_sid,u_pi])
 
-# make graphs
+# define desired design current
 
-levels = np.arange(-10.05,10.05,.1)
+current = float(options.current) # amperes; design current = step in scalar potential
+maxphi = 10 # amperes; biggest you can imagine the scalar potential to be
+num = round(maxphi/current) # half the number of equipotentials
+maxlevel = (2*num-1)*current/2
+minlevel = -maxlevel
+levels = np.arange(minlevel,maxlevel,current)
+print(levels)
+
+# make graphs of contours
 
 fig,(ax_top,ax_bot,ax_sid)=plt.subplots(nrows=3)
 
-ax_top.plot(x_top,y_top,'k.')
+if (options.plotmesh):
+    ax_top.plot(x_top,y_top,'k.')
 top_contours=ax_top.tricontour(x_top,y_top,u_top,levels=levels)
 ax_top.axis((-rcyl,rcyl,-rcyl,rcyl))
 
-ax_bot.plot(x_bot,y_bot,'k.')
+if (options.plotmesh):
+    ax_bot.plot(x_bot,y_bot,'k.')
 bot_contours=ax_bot.tricontour(x_bot,y_bot,u_bot,levels=levels)
 ax_bot.axis((-rcyl,rcyl,-rcyl,rcyl))
 
-ax_sid.plot(phi_sid,z_sid,'k.')
+if (options.plotmesh):
+    ax_sid.plot(phi_sid,z_sid,'k.')
 sid_contours=ax_sid.tricontour(phi_sid,z_sid,u_sid,levels=levels)
 ax_sid.axis((-pi,pi,-hcyl/2,hcyl/2))
 
+# arrange into coils
+
 all_levels=np.sort(np.unique(np.concatenate([top_contours.levels,bot_contours.levels,sid_contours.levels])))
 
-# draw 3D coils
-fig3 = plt.figure()
-ax5 = fig3.add_subplot(111, projection='3d')
 mycoilset=coilset()
 for level in all_levels:
     print(level)
@@ -157,5 +182,64 @@ for level in all_levels:
             print(segsleft)
 
     mycoilset.add_coil(points)
-mycoilset.draw_coils(ax5)
+
+# draw 3D coils
+if (options.traces):
+    fig3 = plt.figure()
+    ax5 = fig3.add_subplot(111, projection='3d')
+    mycoilset.draw_coils(ax5)
+    plt.show()
+
+mycoilset.set_common_current(current) # turn on the coils
+
+min_field=-1.e-6
+max_field=1.e-6
+if (options.planes):
+    figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
+
+    x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
+    #im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest1.pcolormesh(x2d,y2d,bz2d,vmin=min_field,vmax=max_field)
+    figtest.colorbar(im,ax=axtest1)
+
+    x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
+    #im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest2.pcolormesh(z2d,x2d,bz2d,vmin=min_field,vmax=max_field)
+    figtest.colorbar(im,ax=axtest2)
+
+    y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
+    #im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest3.pcolormesh(z2d,y2d,bz2d,vmin=min_field,vmax=max_field)
+    figtest.colorbar(im,ax=axtest3)
+
+    plt.show()
+
+fig7, (ax71) = plt.subplots(nrows=1)
+
+def fitfunc(x,p0,p2,p4,p6):
+    return p0+p2*x**2+p4*x**4+p6*x**6
+
+def fitgraph(xdata,ydata,ax):
+    popt,pcov=curve_fit(fitfunc,xdata[abs(xdata)<.5],ydata[abs(xdata)<.5])
+    print(popt)
+    ax.plot(points1d,fitfunc(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
+
+points1d=np.mgrid[-1:1:101j]
+bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
+fitgraph(points1d,bz1d,ax71)
+ax71.plot(points1d,bz1d,label='$B_z(0,y,0)$')
+bx1d,by1d,bz1d=mycoilset.b_prime(points1d,0.,0.)
+fitgraph(points1d,bz1d,ax71)
+ax71.plot(points1d,bz1d,label='$B_z(x,0,0)$')
+bx1d,by1d,bz1d=mycoilset.b_prime(0.,0.,points1d)
+fitgraph(points1d,bz1d,ax71)
+ax71.plot(points1d,bz1d,label='$B_z(0,0,z)$')
+
+ax71.axis((-.5,.5,min_field,max_field))
+ax71.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+ax71.legend()
+
 plt.show()

@@ -126,19 +126,19 @@ fig, (ax1, ax2) = plt.subplots(nrows=2)
 #u23_contours=ax1.tricontour(tri_refi,u23_refi,levels=levels)
 u23_contours=ax1.tricontour(tri,u2_outer-u3_outer,levels=levels)
 if (options.plotmesh):
-    ax1.plot(x_outer, y_outer, 'ko', ms=1)
+    ax1.plot(x_outer, y_outer, 'k.')
 ax1.axis((0,a_out/2,0,a_out/2))
 fig.colorbar(u23_contours,ax=ax1)
 
 #u3_contours=ax2.tricontour(tri_refi, u3_refi, levels=levels)
 u3_contours=ax2.tricontour(tri, u3_outer, levels=levels)
 if (options.plotmesh):
-    ax2.plot(x_outer, y_outer, 'ko', ms=1)
+    ax2.plot(x_outer, y_outer, 'k.')
 
 #u1_contours=ax2.tricontour(x_inner, y_inner, u1_inner, levels=levels)
 u1_contours=ax2.tricontour(tri_inner, u1_inner, levels=levels)
 if (options.plotmesh):
-    ax2.plot(x_inner, y_inner, 'ko', ms=1)
+    ax2.plot(x_inner, y_inner, 'k.')
 ax2.axis((0,a_out/2, 0,a_out/2))
 fig.colorbar(u1_contours,ax=ax2)
 
@@ -314,9 +314,9 @@ def fitfunc(x,p0,p2,p4,p6):
     return p0+p2*x**2+p4*x**4+p6*x**6
 
 def fitgraph(xdata,ydata,ax):
-    popt,pcov=curve_fit(fitfunc,points1d[abs(points1d)<.5],by1d[abs(points1d)<.5])
+    popt,pcov=curve_fit(fitfunc,xdata[abs(xdata)<.5],ydata[abs(xdata)<.5])
     print(popt)
-    ax.plot(points1d,fitfunc(points1d,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
+    ax.plot(xdata,fitfunc(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
 
 points1d=np.mgrid[-1:1:101j]
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
