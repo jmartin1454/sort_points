@@ -65,13 +65,18 @@ hcyl=1.0 # m
 
 # resolution to identify difference in z and radius
 resz=0.000000001
+resr=0.00001 # This seems to be the minimum allowable resolution in
+             # radius before I start losing points; thank you COMSOL.
+             # Another method might be to take the points that aren't
+             # on top and bottom, but I'd still want a nice row of
+             # points along the top and bottom of the sides.
 
 # get data into top, bottom, and sides of cylinder
 dtop=d[:,abs(d[2]-hcyl/2)<resz]
 x_top,y_top,z_top,u_top=dtop
 dbot=d[:,abs(d[2]+hcyl/2)<resz]
 x_bot,y_bot,z_bot,u_bot=dbot
-dsid=d[:,abs(np.sqrt(d[0]**2+d[1]**2)-rcyl)<resz]
+dsid=d[:,abs(np.sqrt(d[0]**2+d[1]**2)-rcyl)<resr]
 x_sid,y_sid,z_sid,u_sid=dsid
 phi_sid=np.arctan2(y_sid,x_sid)
 # arctan2 seems to place points at +pi; place them also at -pi to make square triangulation region
@@ -81,6 +86,7 @@ u_pi=u_sid[abs(phi_sid-pi)<resz]
 phi_sid=np.concatenate([phi_sid,phi_pi])
 z_sid=np.concatenate([z_sid,z_pi])
 u_sid=np.concatenate([u_sid,u_pi])
+print(len(x_top),len(x_bot),len(x_sid),len(x_top)+len(x_bot)+len(x_sid))
 
 # define desired design current
 
@@ -90,11 +96,11 @@ num = round(maxphi/current) # half the number of equipotentials
 maxlevel = (2*num-1)*current/2
 minlevel = -maxlevel
 levels = np.arange(minlevel,maxlevel,current)
-print(levels)
+
 
 # make graphs of contours
 
-fig,(ax_top,ax_bot,ax_sid)=plt.subplots(nrows=3)
+fig,(ax_top,ax_sid,ax_bot)=plt.subplots(nrows=3)
 
 if (options.plotmesh):
     ax_top.plot(x_top,y_top,'k.')
@@ -102,14 +108,14 @@ top_contours=ax_top.tricontour(x_top,y_top,u_top,levels=levels)
 ax_top.axis((-rcyl,rcyl,-rcyl,rcyl))
 
 if (options.plotmesh):
-    ax_bot.plot(x_bot,y_bot,'k.')
-bot_contours=ax_bot.tricontour(x_bot,y_bot,u_bot,levels=levels)
-ax_bot.axis((-rcyl,rcyl,-rcyl,rcyl))
-
-if (options.plotmesh):
     ax_sid.plot(phi_sid,z_sid,'k.')
 sid_contours=ax_sid.tricontour(phi_sid,z_sid,u_sid,levels=levels)
 ax_sid.axis((-pi,pi,-hcyl/2,hcyl/2))
+
+if (options.plotmesh):
+    ax_bot.plot(x_bot,y_bot,'k.')
+bot_contours=ax_bot.tricontour(x_bot,y_bot,u_bot,levels=levels)
+ax_bot.axis((-rcyl,rcyl,-rcyl,rcyl))
 
 # arrange into coils
 
