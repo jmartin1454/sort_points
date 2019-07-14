@@ -290,19 +290,19 @@ if (options.planes):
 
     x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
     bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
-    im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest1)
 
     x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
     bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
-    im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest2)
 
     y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
     bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
-    im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=min_field,vmax=max_field)
+    im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest3)
 
