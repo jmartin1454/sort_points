@@ -1,0 +1,16 @@
+Good plots with ultra-fine mesh:
+
+./get_field.py -i .09827
+./get_field.py -i .049151 or 2
+./get_field.py -i .10944 , has 6 face and 44 body coils
+./get_field.py -i .2082 , has 3 face and 23 body coils, adjusted to get all plots on screen
+./get_field.py -i .2235 , has 3 face and 22 body coils, can't get plots on screen .2239 is closest I can get
+./get_field.py -i .2411, has 3 face and 20 body coils, gets them on screen nicely?
+.4 .399 and .401 are interesting
+.457 and .458 are interesting.  Largest possible current still having 2 face coils. (.46666666 is largest but doesn't have great homogeneity)
+
+Next:  try quadratic spacings?
+
+./get_cylinder.py -i .001 --> shows nearly ideal behavior for z^2 and -0.5*x^2, -0.5*y^2, with prefactor a bit smaller than 4*pi/10 (g20 coil)
+./get_cylinder.py -i .05 interesting pattern of windings and shows that prefactor can also be larger than infty windings (.001) case (g20 coil)
+./get_cylinder.py -i .08193 (g20) almost zeroes out p4 term with six windings
