@@ -56,9 +56,9 @@ parser.add_option("-t", "--traces", dest="traces", default=False,
 rfs=1.0 # m
 
 # spherical harmonic desired
-ell = 1 # Pignol's notation
+ell = 2 # Pignol's notation
 ell = ell+1 # Legendre's notation
-m = 1
+m = 0
 
 def prefactor(ell):
     return 1.+ell*1./(ell+1.)
@@ -80,7 +80,7 @@ def harmonic(ell,m,x,y,z):
         else:
             return (1./4.)*(3*z**2-r2)
     elif(ell==3 and m==0):
-        return (1./6.)*z*(5*z**2-r2)
+        return (1./6.)*z*(5*z**2-3*r2)
     
 # define desired design current
 
