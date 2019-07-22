@@ -272,6 +272,7 @@ if (options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
     mycoilset.draw_coils(ax5)
+    mycoilset.output_solidworks('solidworks.txt')
     plt.show()
 
 

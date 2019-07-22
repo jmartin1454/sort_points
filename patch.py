@@ -167,3 +167,12 @@ class coilset:
     def draw_coils(self,ax):
         for number in range(self.ncoils):
             self.draw_coil(number,ax)
+
+    def output_solidworks(self,outfile):
+        with open(outfile,'w') as f:
+            for number in range(self.ncoils):
+                coil = self.coils[number]
+                points = coil.points
+                points=np.append(points,[points[0]],axis=0) # force draw closed loop
+                for p in points:
+                    f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
