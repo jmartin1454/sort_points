@@ -57,6 +57,10 @@ parser.add_option("-t", "--traces", dest="traces", default=False,
                   action="store_true",
                   help="show 3D view of coil traces")
 
+parser.add_option("-a", "--analyticu1", dest="anau1", default=False,
+                  action="store_true",
+                  help="use analytic solution for u1")
+
 (options, args) = parser.parse_args()
 
 
@@ -192,7 +196,7 @@ for i,cnt in enumerate(u23_contours.allsegs):
     ynew=np.concatenate((y,ys))
     znew=np.concatenate((z,zs))
     mirrored=False
-    if (x[0]<0.0001):
+    if (x[0]<0.000001):
         # mirror through yz-plane
         xnew=np.concatenate((xnew,-x))
         xnew=np.concatenate((xnew,-xs))
