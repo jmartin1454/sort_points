@@ -57,9 +57,9 @@ parser.add_option("-t", "--traces", dest="traces", default=False,
                   action="store_true",
                   help="show 3D view of coil traces")
 
-parser.add_option("-a", "--analyticu1", dest="anau1", default=False,
+parser.add_option("-a", "--nou1", dest="nou1", default=False,
                   action="store_true",
-                  help="use analytic solution for u1")
+                  help="no solution for u1; just use u3 alone")
 
 (options, args) = parser.parse_args()
 
@@ -198,11 +198,11 @@ for i,cnt in enumerate(u23_contours.allsegs):
     mirrored=False
     if (x[0]<0.000001):
         # mirror through yz-plane
-        xnew=np.concatenate((xnew,-x))
+        xnew=np.concatenate((xnew,np.delete(-x,0))) # avoid repeating point
         xnew=np.concatenate((xnew,-xs))
-        ynew=np.concatenate((ynew,y))
+        ynew=np.concatenate((ynew,np.delete(y,0)))
         ynew=np.concatenate((ynew,ys))
-        znew=np.concatenate((znew,zs))
+        znew=np.concatenate((znew,np.delete(zs,0)))
         znew=np.concatenate((znew,z))
         mirrored=True
     else:
@@ -235,43 +235,73 @@ for i,cnt in enumerate(u23_contours.allsegs):
         
 # now for the face plates
 
-print("There are %d face coils."%len(u1_contours.allsegs))
+print("There are %d face coils in %d levels."%(len(u1_contours.allsegs),len(u1_contours.levels)))
 
-for i,cnt in enumerate(u1_contours.allsegs):
-    seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-    # these go from outer to inner
-    x=seg[:,0]
-    y=seg[:,1]
-    # get the corresponding contour from u3
-    seg=u3_contours.allsegs[i][0]
-    xs=seg[:,0]
-    ys=seg[:,1]
-    xnew=np.concatenate((x,xs))
-    ynew=np.concatenate((y,ys))
-    # mirror through yz-plane
-    xnew=np.concatenate((xnew,np.flip(-xs,0)))
-    xnew=np.concatenate((xnew,np.flip(-x,0)))
-    ynew=np.concatenate((ynew,np.flip(ys,0)))
-    ynew=np.concatenate((ynew,np.flip(y,0)))
-    znew=[-a_out/2]*len(ynew)
-    points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
-    # mirror through xy-plane
-    znew=[a_out/2]*len(ynew)
-    xnew=np.flip(xnew,0)
-    ynew=np.flip(ynew,0)
-    points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
-    # mirror through xz-plane
-    ynew=-ynew
-    points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
-    znew=[-a_out/2]*len(ynew)
-    xnew=np.flip(xnew,0)
-    ynew=np.flip(ynew,0)    
-    points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
+if (not options.nou1):
+    for i,cnt in enumerate(u1_contours.allsegs):
+        seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
+        # these go from outer to inner
+        x=seg[:,0]
+        y=seg[:,1]
+        # get the corresponding contour from u3
+        seg=u3_contours.allsegs[i][0]
+        xs=seg[:,0]
+        ys=seg[:,1]
+        xnew=np.concatenate((x,np.delete(xs,0))) # xs on the boundary is usually a repeated point
+        ynew=np.concatenate((y,np.delete(ys,0)))
+        # mirror through yz-plane
+        xnew=np.concatenate((xnew,np.delete(np.flip(-xs,0),[0,len(xs)-1]))) # first and last point are repeated
+        xnew=np.concatenate((xnew,np.flip(-x,0)))
+        ynew=np.concatenate((ynew,np.delete(np.flip(ys,0),[0,len(ys)-1])))
+        ynew=np.concatenate((ynew,np.flip(y,0)))
+        znew=[-a_out/2]*len(ynew)
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        # mirror through xy-plane
+        znew=[a_out/2]*len(ynew)
+        xnew=np.flip(xnew,0)
+        ynew=np.flip(ynew,0)
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        # mirror through xz-plane
+        ynew=-ynew
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        znew=[-a_out/2]*len(ynew)
+        xnew=np.flip(xnew,0)
+        ynew=np.flip(ynew,0)    
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+else:
+    for i,cnt in enumerate(u3_contours.allsegs):
+        seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
+        xs=seg[:,0]
+        ys=seg[:,1]
+        xnew=np.concatenate((xs,np.delete(np.flip(-xs,0),0))) # delete repeated point on axis
+        ynew=np.concatenate((ys,np.delete(np.flip(ys,0),0)))
+        xnew=np.concatenate((xnew,[xnew[0]])) # really force closing the loop
+        ynew=np.concatenate((ynew,[ynew[0]]))
+        znew=[-a_out/2]*len(ynew)
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        # mirror through xy-plane
+        znew=[a_out/2]*len(ynew)
+        xnew=np.flip(xnew,0)
+        ynew=np.flip(ynew,0)
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        # mirror through xz-plane
+        ynew=-ynew
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
+        znew=[-a_out/2]*len(ynew)
+        xnew=np.flip(xnew,0)
+        ynew=np.flip(ynew,0)    
+        points=np.array(zip(xnew,ynew,znew))
+        mycoilset.add_coil(points)
 
+
+        
 if (options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')

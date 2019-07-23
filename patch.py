@@ -163,7 +163,7 @@ class coilset:
                   lw=3,arrowstyle="-|>",color="r")
         ax.add_artist(a)
         ax.text(x[0],y[0],z[0],"%d"%number,color="r")
-        
+
     def draw_coils(self,ax):
         for number in range(self.ncoils):
             self.draw_coil(number,ax)
@@ -173,7 +173,13 @@ class coilset:
             for number in range(self.ncoils):
                 coil = self.coils[number]
                 points = coil.points
-                points=np.append(points,[points[0]],axis=0) # force draw closed loop
+                firstpoint=points[0]
+                lastpoint=points[-1]
+                if (not(firstpoint[0]==lastpoint[0] and
+                        firstpoint[1]==lastpoint[1] and
+                        firstpoint[2]==lastpoint[2])):
+                    points=np.append(points,[points[0]],axis=0) # force draw closed loop
                 for p in points:
-                    f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
+                    #f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
+                    f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))
                     oldpoints=p
