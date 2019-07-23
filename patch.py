@@ -180,6 +180,6 @@ class coilset:
                         firstpoint[2]==lastpoint[2])):
                     points=np.append(points,[points[0]],axis=0) # force draw closed loop
                 for p in points:
-                    #f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
-                    f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))
-                    oldpoints=p
+                    f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
+                    # The next line is useful for debugging
+                    #f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))

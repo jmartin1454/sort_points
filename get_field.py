@@ -30,6 +30,10 @@ from patch import *
 
 from scipy.optimize import curve_fit
 
+# line simplification
+
+from simplification.cutil import simplify_coords, simplify_coords_vw
+
 # parse command line arguments
 
 parser = OptionParser()
@@ -60,6 +64,11 @@ parser.add_option("-t", "--traces", dest="traces", default=False,
 parser.add_option("-a", "--nou1", dest="nou1", default=False,
                   action="store_true",
                   help="no solution for u1; just use u3 alone")
+
+parser.add_option("-s", "--simplify", dest="simplify",
+                  default=-1, help="factor for VW simplification",
+                  metavar="FILE")
+
 
 (options, args) = parser.parse_args()
 
@@ -159,6 +168,11 @@ if (options.contours):
         x=seg[:,0]
         y=seg[:,1]
         ax3.plot(x,y,'.-',color='black',ms=1)
+        if(options.simplify>0):
+            segsimp=simplify_coords_vw(seg,float(options.simplify))
+            xsimp=segsimp[:,0]
+            ysimp=segsimp[:,1]
+            ax3.plot(xsimp,ysimp,'.-',color='red')
     ax3.axis((0,a_out/2,0,a_out/2))
 
     for i,cnt in enumerate(u3_contours.allsegs):
@@ -166,11 +180,21 @@ if (options.contours):
         x=seg[:,0]
         y=seg[:,1]
         ax4.plot(x,y,'.-',color='black',ms=1)
+        if(options.simplify>0):
+            segsimp=simplify_coords_vw(seg,float(options.simplify))
+            xsimp=segsimp[:,0]
+            ysimp=segsimp[:,1]
+            ax4.plot(xsimp,ysimp,'.-',color='red')
     for i,cnt in enumerate(u1_contours.allsegs):
         seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
         x=seg[:,0]
         y=seg[:,1]
         ax4.plot(x,y,'.-',color='black',ms=1)
+        if(options.simplify>0):
+            segsimp=simplify_coords_vw(seg,float(options.simplify))
+            xsimp=segsimp[:,0]
+            ysimp=segsimp[:,1]
+            ax4.plot(xsimp,ysimp,'.-',color='red')
     ax4.axis((0,a_out/2,0,a_out/2))
 
     plt.show()
@@ -186,8 +210,15 @@ print("There are %d outer coils."%len(u23_contours.allsegs))
 for i,cnt in enumerate(u23_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
     # these go from outer to inner
-    x=seg[:,0]
-    y=seg[:,1]
+    if(options.simplify<0):
+        x=seg[:,0]
+        y=seg[:,1]
+    else:
+        segsimp=simplify_coords_vw(seg,float(options.simplify))
+        xsimp=segsimp[:,0]
+        ysimp=segsimp[:,1]
+        x=xsimp
+        y=ysimp
     z=[-a_out/2]*len(y)
     xs=np.flip(x,0)
     ys=np.flip(y,0)
@@ -275,8 +306,15 @@ if (not options.nou1):
 else:
     for i,cnt in enumerate(u3_contours.allsegs):
         seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-        xs=seg[:,0]
-        ys=seg[:,1]
+        if(options.simplify<0):
+            xs=seg[:,0]
+            ys=seg[:,1]
+        else:
+            segsimp=simplify_coords_vw(seg,float(options.simplify))
+            xsimp=segsimp[:,0]
+            ysimp=segsimp[:,1]
+            xs=xsimp
+            ys=ysimp
         xnew=np.concatenate((xs,np.delete(np.flip(-xs,0),0))) # delete repeated point on axis
         ynew=np.concatenate((ys,np.delete(np.flip(ys,0),0)))
         xnew=np.concatenate((xnew,[xnew[0]])) # really force closing the loop
