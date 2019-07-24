@@ -151,22 +151,22 @@ class coilset:
             b_total_z=b_total_z+b_coil_z
         return b_total_x,b_total_y,b_total_z
         
-    def draw_coil(self,number,ax):
+    def draw_coil(self,number,ax,style):
         coil = self.coils[number]
         points = coil.points
         points=np.append(points,[points[0]],axis=0) # force draw closed loop
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
-        ax.plot(x,y,z,'-',color='black')
+        ax.plot(x,y,z,style,color='black')
         a=Arrow3D([x[0],x[1]],[y[0],y[1]],[z[0],z[1]],mutation_scale=20, 
                   lw=3,arrowstyle="-|>",color="r")
         ax.add_artist(a)
         ax.text(x[0],y[0],z[0],"%d"%number,color="r")
 
-    def draw_coils(self,ax):
+    def draw_coils(self,ax,style='-'):
         for number in range(self.ncoils):
-            self.draw_coil(number,ax)
+            self.draw_coil(number,ax,style)
 
     def output_solidworks(self,outfile):
         with open(outfile,'w') as f:
@@ -180,6 +180,4 @@ class coilset:
                         firstpoint[2]==lastpoint[2])):
                     points=np.append(points,[points[0]],axis=0) # force draw closed loop
                 for p in points:
-                    f.write("{0}\t{1}\t{2}\n".format(p[2],p[0],p[1]))
-                    # The next line is useful for debugging
-                    #f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))
+                    f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))

@@ -67,11 +67,16 @@ parser.add_option("-a", "--nou1", dest="nou1", default=False,
 
 parser.add_option("-s", "--simplify", dest="simplify",
                   default=-1, help="factor for VW simplification",
-                  metavar="FILE")
+                  metavar="factor")
+
+parser.add_option("-d", "--densify", dest="densify",
+                  default=-1, help="add <densify> points to sides",
+                  metavar="densify")
 
 
 (options, args) = parser.parse_args()
 
+densify=int(options.densify)
 
 with open(options.infile) as stream:
     d=np.loadtxt(stream,comments="%",unpack=True)
@@ -220,24 +225,44 @@ for i,cnt in enumerate(u23_contours.allsegs):
         x=xsimp
         y=ysimp
     z=[-a_out/2]*len(y)
+    if(densify>0):
+        xfake_outer=[x[0]]*(densify-1)
+        yfake_outer=[y[0]]*(densify-1)
+        xfake_inner=[x[-1]]*(densify-1)
+        yfake_inner=[y[-1]]*(densify-1)
+        step=a_out/densify
+        zfake=np.arange(-a_out/2+step,a_out/2,step)
     xs=np.flip(x,0)
     ys=np.flip(y,0)
     zs=[a_out/2]*len(y)
-    xnew=np.concatenate((x,xs))
-    ynew=np.concatenate((y,ys))
-    znew=np.concatenate((z,zs))
+    if(densify>0):
+        xnew=np.concatenate((x,xfake_inner,xs))
+        ynew=np.concatenate((y,yfake_inner,ys))
+        znew=np.concatenate((z,zfake,zs))
+    else:
+        xnew=np.concatenate((x,xs))
+        ynew=np.concatenate((y,ys))
+        znew=np.concatenate((z,zs))
     mirrored=False
     if (x[0]<0.000001):
         # mirror through yz-plane
         xnew=np.concatenate((xnew,np.delete(-x,0))) # avoid repeating point
-        xnew=np.concatenate((xnew,-xs))
         ynew=np.concatenate((ynew,np.delete(y,0)))
-        ynew=np.concatenate((ynew,ys))
         znew=np.concatenate((znew,np.delete(zs,0)))
+        if(densify>0):
+            xnew=np.concatenate((xnew,np.negative(xfake_inner)))
+            ynew=np.concatenate((ynew,yfake_inner))
+            znew=np.concatenate((znew,-zfake)) # -zfake is same as np.flip(zfake,0)
+        xnew=np.concatenate((xnew,-xs))
+        ynew=np.concatenate((ynew,ys))
         znew=np.concatenate((znew,z))
         mirrored=True
     else:
         # complete loop
+        if(densify>0):
+            xnew=np.concatenate((xnew,xfake_outer))
+            ynew=np.concatenate((ynew,yfake_outer))
+            znew=np.concatenate((znew,-zfake)) # -zfake is same as np.flip(zfake,0)
         xnew=np.append(xnew,xnew[0])
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
@@ -263,7 +288,7 @@ for i,cnt in enumerate(u23_contours.allsegs):
         points=np.array(zip(xnew,ynew,znew))
         mycoilset.add_coil(points)
 
-        
+
 # now for the face plates
 
 print("There are %d face coils in %d levels."%(len(u1_contours.allsegs),len(u1_contours.levels)))
@@ -340,10 +365,13 @@ else:
 
 
         
-if (options.traces):
+if(options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
-    mycoilset.draw_coils(ax5)
+    if(densify>0):
+        mycoilset.draw_coils(ax5,'.')
+    else:
+        mycoilset.draw_coils(ax5)
     mycoilset.output_solidworks('solidworks.txt')
     plt.show()
 
