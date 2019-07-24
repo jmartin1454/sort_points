@@ -181,3 +181,26 @@ class coilset:
                     points=np.append(points,[points[0]],axis=0) # force draw closed loop
                 for p in points:
                     f.write("{0}\t{1}\t{2}\n".format(p[0],p[1],p[2]))
+
+    def output_scad(self,outfile,thickness=0.001):
+        with open(outfile,'w') as f:
+            f.write("module line(start, end, thickness = %f) {\n"%thickness)
+            f.write("hull() {\n")
+            f.write("translate(start) sphere(thickness);\n")
+            f.write("translate(end) sphere(thickness);\n")
+            f.write("}\n")
+            f.write("}\n")
+            for number in range(self.ncoils):
+                coil = self.coils[number]
+                points = coil.points
+                firstpoint=points[0]
+                lastpoint=points[-1]
+                if (not(firstpoint[0]==lastpoint[0] and
+                        firstpoint[1]==lastpoint[1] and
+                        firstpoint[2]==lastpoint[2])):
+                    points=np.append(points,[points[0]],axis=0) # force draw closed loop
+                f.write("// coil %d\n"%number)
+                for i in range(len(points)):
+                    lastpoint=points[i-1]
+                    thispoint=points[i]
+                    f.write("line([%f,%f,%f],[%f,%f,%f]);\n"%(lastpoint[0],lastpoint[1],lastpoint[2],thispoint[0],thispoint[1],thispoint[2]))

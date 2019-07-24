@@ -373,6 +373,7 @@ if(options.traces):
     else:
         mycoilset.draw_coils(ax5)
     mycoilset.output_solidworks('solidworks.txt')
+    mycoilset.output_scad('solidworks.scad')
     plt.show()
 
 
