@@ -151,22 +151,22 @@ class coilset:
             b_total_z=b_total_z+b_coil_z
         return b_total_x,b_total_y,b_total_z
         
-    def draw_coil(self,number,ax,style):
+    def draw_coil(self,number,ax,style,color):
         coil = self.coils[number]
         points = coil.points
         points=np.append(points,[points[0]],axis=0) # force draw closed loop
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
-        ax.plot(x,y,z,style,color='black')
+        ax.plot(x,y,z,style,color=color)
         a=Arrow3D([x[0],x[1]],[y[0],y[1]],[z[0],z[1]],mutation_scale=20, 
                   lw=3,arrowstyle="-|>",color="r")
         ax.add_artist(a)
         ax.text(x[0],y[0],z[0],"%d"%number,color="r")
 
-    def draw_coils(self,ax,style='-'):
+    def draw_coils(self,ax,style='-',color='black'):
         for number in range(self.ncoils):
-            self.draw_coil(number,ax,style)
+            self.draw_coil(number,ax,style,color)
 
     def output_solidworks(self,outfile):
         with open(outfile,'w') as f:
@@ -204,3 +204,23 @@ class coilset:
                     lastpoint=points[i-1]
                     thispoint=points[i]
                     f.write("line([%f,%f,%f],[%f,%f,%f]);\n"%(lastpoint[0],lastpoint[1],lastpoint[2],thispoint[0],thispoint[1],thispoint[2]))
+
+    def output_scad_prime(self,outfile,thickness=0.001):
+        with open(outfile,'w') as f:
+            f.write("thickness = %f\n"%thickness)
+            f.write("translate(end) sphere(thickness);\n")
+            for number in range(self.ncoils):
+                coil = self.coils[number]
+                points = coil.points
+                firstpoint=points[0]
+                lastpoint=points[-1]
+                if (not(firstpoint[0]==lastpoint[0] and
+                        firstpoint[1]==lastpoint[1] and
+                        firstpoint[2]==lastpoint[2])):
+                    points=np.append(points,[points[0]],axis=0) # force draw closed loop
+                f.write("// coil %d\n"%number)
+                f.write("hull() {\n")
+                for p in points:
+                    f.write("translate([%f,%f,%f]) sphere(thickness);\n"%(p[0],p[1],p[2]))
+                f.write("}\n")
+

@@ -207,8 +207,7 @@ if (options.contours):
 
 # assemble 3D coils
 
-# rewrite using patch.py class library
-mycoilset=coilset()
+body_coil=coilset()
 
 print("There are %d outer coils."%len(u23_contours.allsegs))
 
@@ -267,12 +266,12 @@ for i,cnt in enumerate(u23_contours.allsegs):
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
     points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
+    body_coil.add_coil(points)
 
     # reflect through xz-plane
     ynew=-ynew
     points=np.array(zip(xnew,ynew,znew))
-    mycoilset.add_coil(points)
+    body_coil.add_coil(points)
     if not mirrored:
         ynew=-ynew # put it back for a sec
         # reflect separate trace through yz-plane
@@ -282,14 +281,16 @@ for i,cnt in enumerate(u23_contours.allsegs):
         ynew=np.flip(ynew,0)
         znew=np.flip(znew,0)
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        body_coil.add_coil(points)
         # and through the xz-plane
         ynew=-ynew
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        body_coil.add_coil(points)
 
 
 # now for the face plates
+front_face_coil=coilset()
+back_face_coil=coilset()
 
 print("There are %d face coils in %d levels."%(len(u1_contours.allsegs),len(u1_contours.levels)))
 
@@ -312,22 +313,22 @@ if (not options.nou1):
         ynew=np.concatenate((ynew,np.flip(y,0)))
         znew=[-a_out/2]*len(ynew)
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        back_face_coil.add_coil(points)
         # mirror through xy-plane
         znew=[a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        front_face_coil.add_coil(points)
         # mirror through xz-plane
         ynew=-ynew
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        front_face_coil.add_coil(points)
         znew=[-a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)    
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        back_face_coil.add_coil(points)
 else:
     for i,cnt in enumerate(u3_contours.allsegs):
         seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
@@ -346,22 +347,22 @@ else:
         ynew=np.concatenate((ynew,[ynew[0]]))
         znew=[-a_out/2]*len(ynew)
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        back_face_coil.add_coil(points)
         # mirror through xy-plane
         znew=[a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        front_face_coil.add_coil(points)
         # mirror through xz-plane
         ynew=-ynew
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        front_face_coil.add_coil(points)
         znew=[-a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)    
         points=np.array(zip(xnew,ynew,znew))
-        mycoilset.add_coil(points)
+        back_face_coil.add_coil(points)
 
 
         
@@ -369,18 +370,40 @@ if(options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
     if(densify>0):
-        mycoilset.draw_coils(ax5,'.')
+        body_coil.draw_coils(ax5,'.','black')
+        front_face_coil.draw_coils(ax5,'.','blue')
+        back_face_coil.draw_coils(ax5,'.','green')
     else:
-        mycoilset.draw_coils(ax5)
-    mycoilset.output_solidworks('solidworks.txt')
-    mycoilset.output_scad('solidworks.scad')
+        body_coil.draw_coils(ax5,'-','black')
+        front_face_coil.draw_coils(ax5,'-','blue')
+        back_face_coil.draw_coils(ax5,'-','green')
+
+    body_coil.output_solidworks('body_coil_point_cloud.txt')
+    front_face_coil.output_solidworks('front_face_coil_point_cloud.txt')
+    back_face_coil.output_solidworks('back_face_coil_point_cloud.txt')
+
+    body_coil.output_scad_prime('body_coil.scad')
+    front_face_coil.output_scad_prime('front_face_coil.scad')
+    back_face_coil.output_scad_prime('back_face_coil.scad')
+
     plt.show()
 
 
-mycoilset.set_common_current(current)
+body_coil.set_common_current(current)
+front_face_coil.set_common_current(current)
+back_face_coil.set_common_current(current)
+
+def vecb(x,y,z):
+    bx_body,by_body,bz_body=body_coil.b_prime(x,y,z)
+    bx_front_face,by_front_face,bz_front_face=front_face_coil.b_prime(x,y,z)
+    bx_back_face,by_back_face,bz_back_face=back_face_coil.b_prime(x,y,z)
+    bx=bx_body+bx_front_face+bx_back_face
+    by=by_body+by_front_face+by_back_face
+    bz=bz_body+bz_front_face+bz_back_face
+    return bx,by,bz
 
 design_field=-4*pi/10*1.e-6
-bx,by,bz=mycoilset.b_prime(0.,0.,0.)
+bx,by,bz=vecb(0.,0.,0.)
 central_field=by
 delta_field=5.e-9
 min_field=central_field-delta_field
@@ -391,19 +414,19 @@ if (options.planes):
     figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
 
     x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
-    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,y2d,0.)
+    bx2d,by2d,bz2d=vecb(x2d,y2d,0.)
     im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest1)
 
     x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
-    bx2d,by2d,bz2d=mycoilset.b_prime(x2d,0.,z2d)
+    bx2d,by2d,bz2d=vecb(x2d,0.,z2d)
     im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest2)
 
     y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
-    bx2d,by2d,bz2d=mycoilset.b_prime(0.,y2d,z2d)
+    bx2d,by2d,bz2d=vecb(0.,y2d,z2d)
     im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest3)
@@ -421,13 +444,13 @@ def fitgraph(xdata,ydata,ax):
     ax.plot(xdata,fitfunc(xdata,*popt),'r--',label='$p_0$=%2.1e,$p_2$=%2.1e,$p_4$=%2.1e,$p_6$=%2.1e'%tuple(popt))
 
 points1d=np.mgrid[-1:1:101j]
-bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
+bx1d,by1d,bz1d=vecb(0.,points1d,0.)
 fitgraph(points1d,by1d,ax71)
 ax71.plot(points1d,by1d,label='$B_y(0,y,0)$')
-bx1d,by1d,bz1d=mycoilset.b_prime(points1d,0.,0.)
+bx1d,by1d,bz1d=vecb(points1d,0.,0.)
 fitgraph(points1d,by1d,ax71)
 ax71.plot(points1d,by1d,label='$B_y(x,0,0)$')
-bx1d,by1d,bz1d=mycoilset.b_prime(0.,0.,points1d)
+bx1d,by1d,bz1d=vecb(0.,0.,points1d)
 fitgraph(points1d,by1d,ax71)
 ax71.plot(points1d,by1d,label='$B_y(0,0,z)$')
 
