@@ -69,9 +69,16 @@ parser.add_option("-s", "--simplify", dest="simplify",
                   default=-1, help="factor for VW simplification",
                   metavar="factor")
 
+# simplify is used to remove points, making it easier to draw and
+# faster to calculate the field
+
 parser.add_option("-d", "--densify", dest="densify",
                   default=-1, help="add <densify> points to sides",
                   metavar="densify")
+
+# densify is used to add points so you can see where the wires are, if
+# just exporting points to a file for direct import to SolidWorks
+
 
 
 (options, args) = parser.parse_args()
@@ -88,8 +95,10 @@ du2=d[:,(d[3]<100)] # remove NaN's in u2
 x_outer,y_outer,u1_outer,u2_outer,u3_outer=du2
 
 # geometry factors from COMSOL model
-a_out = 1.8 # m
-a_in = 1.4 # m
+a_out = 2.2 # m
+a_in = 2.0 # m
+#a_out = 1.8 # m
+#a_in = 1.4 # m
 
 # mask out bad triangles that will be created when automatically triangulating outer (concave) region.
 
@@ -130,14 +139,14 @@ tri_inner = Triangulation(x_inner,y_inner)
 # make graphs
 
 current = float(options.current) # amperes; design current = step in scalar potential
-maxphi = 10 # amperes; biggest you can imagine the scalar potential to be
+maxphi = 30 # amperes; biggest you can imagine the scalar potential to be
 num = round(maxphi/current) # half the number of equipotentials
 maxlevel = (2*num-1)*current/2
 minlevel = -maxlevel
 levels = np.arange(minlevel,maxlevel,current)
 print(levels)
 
-fig, (ax1, ax2) = plt.subplots(nrows=2)
+fig, ax1 = plt.subplots()
 
 #ax1.triplot(tri, color='0.7') # if you want to see the triangulation
 
@@ -148,19 +157,25 @@ if (options.plotmesh):
 ax1.axis((0,a_out/2,0,a_out/2))
 fig.colorbar(u23_contours,ax=ax1)
 
-#u3_contours=ax2.tricontour(tri_refi, u3_refi, levels=levels)
-u3_contours=ax2.tricontour(tri, u3_outer, levels=levels)
+#u3_contours=ax1.tricontour(tri_refi, u3_refi, levels=levels)
+u3_contours=ax1.tricontour(tri, u3_outer, levels=levels)
 if (options.plotmesh):
-    ax2.plot(x_outer, y_outer, 'k.')
+    ax1.plot(x_outer, y_outer, 'k.')
 
-#u1_contours=ax2.tricontour(x_inner, y_inner, u1_inner, levels=levels)
-u1_contours=ax2.tricontour(tri_inner, u1_inner, levels=levels)
+#u1_contours=ax1.tricontour(x_inner, y_inner, u1_inner, levels=levels)
+u1_contours=ax1.tricontour(tri_inner, u1_inner, levels=levels)
 if (options.plotmesh):
-    ax2.plot(x_inner, y_inner, 'k.')
-ax2.axis((0,a_out/2, 0,a_out/2))
-fig.colorbar(u1_contours,ax=ax2)
+    ax1.plot(x_inner, y_inner, 'k.')
+ax1.axis((0,a_out/2, 0,a_out/2))
+fig.colorbar(u1_contours,ax=ax1)
 
-#plt.show()
+gcc_x=.444 #m, guide center-to-center in x direction
+gcc_y=.764 #m, guide center-to-center in y direction
+gdia=.15 #m, guide diameter
+circle1 = plt.Circle((gcc_x/2,gcc_y/2),gdia/2,color='r')
+circle2 = plt.Circle((0,0),gdia/2,color='r')
+ax1.add_patch(circle1)
+ax1.add_patch(circle2)
 
 ## extracting all the contours and graphing them
 if (options.contours):
@@ -214,7 +229,7 @@ print("There are %d outer coils."%len(u23_contours.allsegs))
 for i,cnt in enumerate(u23_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
     # these go from outer to inner
-    if(options.simplify<0):
+    if(float(options.simplify)<0):
         x=seg[:,0]
         y=seg[:,1]
     else:
@@ -332,7 +347,7 @@ if (not options.nou1):
 else:
     for i,cnt in enumerate(u3_contours.allsegs):
         seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-        if(options.simplify<0):
+        if(float(options.simplify)<0):
             xs=seg[:,0]
             ys=seg[:,1]
         else:
@@ -364,6 +379,10 @@ else:
         points=np.array(zip(xnew,ynew,znew))
         back_face_coil.add_coil(points)
 
+print("There are %d body coils"%body_coil.ncoils)
+print("There are %d front face coils"%front_face_coil.ncoils)
+print("There are %d back face coils"%back_face_coil.ncoils)
+        
 
         
 if(options.traces):
@@ -382,9 +401,9 @@ if(options.traces):
     front_face_coil.output_solidworks('front_face_coil_point_cloud.txt')
     back_face_coil.output_solidworks('back_face_coil_point_cloud.txt')
 
-    body_coil.output_scad_prime('body_coil.scad')
-    front_face_coil.output_scad_prime('front_face_coil.scad')
-    back_face_coil.output_scad_prime('back_face_coil.scad')
+    body_coil.output_scad('body_coil.scad')
+    front_face_coil.output_scad('front_face_coil.scad')
+    back_face_coil.output_scad('back_face_coil.scad')
 
     plt.show()
 
@@ -405,31 +424,64 @@ def vecb(x,y,z):
 design_field=-4*pi/10*1.e-6
 bx,by,bz=vecb(0.,0.,0.)
 central_field=by
-delta_field=5.e-9
+delta_field=1.e-9
 min_field=central_field-delta_field
 max_field=central_field+delta_field
 print(central_field,delta_field)
 
 if (options.planes):
-    figtest, (axtest1, axtest2, axtest3) = plt.subplots(nrows=3)
+    # show the inner field
 
-    x2d,y2d=np.mgrid[-1:1:100j,-1:1:100j]
+    figtest,(axtest1,axtest2,axtest3)=plt.subplots(nrows=3)
+    
+    x2d,y2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
     bx2d,by2d,bz2d=vecb(x2d,y2d,0.)
     im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest1)
+    figtest.colorbar(im,ax=axtest1,format='%.5e')
 
-    x2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    x2d,z2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
     bx2d,by2d,bz2d=vecb(x2d,0.,z2d)
     im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest2)
+    figtest.colorbar(im,ax=axtest2,format='%.5e')
 
-    y2d,z2d=np.mgrid[-1:1:100j,-1:1:100j]
+    y2d,z2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
     bx2d,by2d,bz2d=vecb(0.,y2d,z2d)
     im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest3)
+    figtest.colorbar(im,ax=axtest3,format='%.5e')
+
+    # show the outer field
+    
+    figouter,(axouter1,axouter2,axouter3)=plt.subplots(nrows=3)
+
+    x2d,y2d=np.mgrid[-1.5:1.5:100j,-1.5:1.5:100j]
+    bx2d,by2d,bz2d=vecb(x2d,y2d,0.)
+    bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
+    mask=((abs(x2d)<1.2)&(abs(y2d)<1.2))
+    x2d_masked=np.ma.masked_where(mask,x2d)
+    y2d_masked=np.ma.masked_where(mask,y2d)
+    im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
+    figouter.colorbar(im,ax=axouter1,format='%.2e')
+
+    x2d,z2d=np.mgrid[-1.5:1.5:100j,-1.5:1.5:100j]
+    bx2d,by2d,bz2d=vecb(x2d,0.,z2d)
+    bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
+    mask=((abs(x2d)<1.2)&(abs(z2d)<1.2))
+    x2d_masked=np.ma.masked_where(mask,x2d)
+    z2d_masked=np.ma.masked_where(mask,z2d)
+    im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
+    figouter.colorbar(im,ax=axouter2,format='%.2e')
+
+    y2d,z2d=np.mgrid[-1.5:1.5:100j,-1.5:1.5:100j]
+    bx2d,by2d,bz2d=vecb(0.,y2d,z2d)
+    bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
+    mask=((abs(y2d)<1.2)&(abs(z2d)<1.2))
+    y2d_masked=np.ma.masked_where(mask,y2d)
+    z2d_masked=np.ma.masked_where(mask,z2d)
+    im=axouter3.pcolor(z2d_masked,y2d_masked,bmod)
+    figouter.colorbar(im,ax=axouter3,format='%.2e')
 
     plt.show()
 
@@ -459,3 +511,61 @@ ax71.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 ax71.legend()
 
 plt.show()
+
+
+# Statistics in ROI
+
+print
+print('Statistics on the ROI')
+print
+
+x,y,z=np.mgrid[-.49:.49:100j,-.49:.49:100j,-.49:.49:100j]
+
+rcell=0.3 # m, cell radius
+hcell=0.1601 # m, cell height
+dcell=0.08 # m, bottom to top distance of cells
+mask=(abs(z)>=dcell/2)&(abs(z)<=dcell/2+hcell)&(x**2+y**2<rcell**2)
+mask_upper=mask&(z>0)
+mask_lower=mask&(z<0)
+
+# This is used to test the cell dimensions.
+
+#fig=plt.figure()
+#ax=fig.add_subplot(111,projection='3d')
+#scat=ax.scatter(x[mask_upper],y[mask_upper],z[mask_upper])
+#plt.show()
+
+bx_roi,by_roi,bz_roi=vecb(x,y,z)
+
+print('Both cells')
+by_mask_max=np.amax(by_roi[mask])
+by_mask_min=np.amin(by_roi[mask])
+by_mask_delta=by_mask_max-by_mask_min
+print('The max/min/diff By masks are %e %e %e'%(by_mask_max,by_mask_min,by_mask_delta))
+by_std=np.std(by_roi[mask])
+print('The masked standard deviation of By is %e'%by_std)
+print
+
+print('Upper cell')
+by_mask_max=np.amax(by_roi[mask_upper])
+by_mask_min=np.amin(by_roi[mask_upper])
+by_mask_delta=by_mask_max-by_mask_min
+print('The max/min/diff By masks are %e %e %e'%(by_mask_max,by_mask_min,by_mask_delta))
+by_std=np.std(by_roi[mask_upper])
+print('The masked standard deviation of By is %e'%by_std)
+print
+
+print('Lower cell')
+by_mask_max=np.amax(by_roi[mask_lower])
+by_mask_min=np.amin(by_roi[mask_lower])
+by_mask_delta=by_mask_max-by_mask_min
+print('The max/min/diff By masks are %e %e %e'%(by_mask_max,by_mask_min,by_mask_delta))
+by_std=np.std(by_roi[mask_lower])
+print('The masked standard deviation of By is %e'%by_std)
+print
+
+print('Both cells BT2')
+bt2_roi=bx_roi**2+bz_roi**2
+bt2_ave=np.average(bt2_roi[mask])
+print('The BT2 is %e'%bt2_ave)
+print
