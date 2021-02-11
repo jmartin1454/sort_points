@@ -1,0 +1,35 @@
+./get_field.py -i .37163 -f data-2.0.txt
+45 and 3
+
+./get_field.py -i .2627 -f data-2.0.txt
+63 and 4
+
+./get_field.py -i .43003 -f data-2.0.txt
+39 and 2
+
+./get_field.py -i .44814 -f data-2.0.txt
+37 and 2
+
+./get_field.py -i .4741 -f data-2.0.txt
+35 and 2
+
+./get_field.py -i .48832 -f data-2.0.txt
+34 and 2
+
+./get_field.py -i .5024 -f data-2.0.txt
+33 and 2
+
+2.2/4=.55 coupled solenoid spacing for 2 face coil
+2.3/4=.575
+
+2.3/6=.3833 3 face
+2.3/8=.2875 4 face <-- cannot avoid yoke .2875/2=.14375<.15
+2.3/10=.23 4 face add extra coil in yoke .23/2=.115 from wall
+2.3/8=.2875 3 face add extra coil in yoke .2875/2=.14375 from wall
+
+./get_field.py -i .28488 -f data-2.0.txt
+58 and 4 -- starting from .2875 and walking down -- unfortunately added an extra face coil
+
+./get_field.py -i .2878907 -f data-2.0.txt
+58 and 3 -- this is the right one
+
