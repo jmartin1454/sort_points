@@ -33,3 +33,5 @@
 ./get_field.py -i .2878907 -f data-2.0.txt
 58 and 3 -- this is the right one
 
+A recent command line that pops up a lot of stuff, writes files, etc.
+./get_field.py -i .5024 -f data-2.0.txt -s .001 -c -a -p -t
