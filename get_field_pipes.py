@@ -129,7 +129,7 @@ tri_inner = Triangulation(x_inner,y_inner)
 # make graphs
 
 current = float(options.current) # amperes; design current = step in scalar potential
-maxphi = 30 # amperes; biggest you can imagine the scalar potential to be
+maxphi = 100 # amperes; biggest you can imagine the scalar potential to be
 num = round(maxphi/current) # half the number of equipotentials
 maxlevel = (2*num-1)*current/2
 minlevel = -maxlevel
@@ -167,9 +167,9 @@ circle2 = plt.Circle((0,0),gdia/2,color='r')
 ax1.add_patch(circle1)
 ax1.add_patch(circle2)
 
-rpipes=[0.03,0.03] #m
-ypipes=[0.0,0.0] #m
-zpipes=[0,.1] #m
+rpipes=[0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.015,0.015] #m
+ypipes=[0,0,0,0,0,0.4,0.4,0.4,0.4,0.4,0.14,0.185/2] #m
+zpipes=[-0.44,-0.22,0,0.22,0.44,-0.44,-0.22,0,0.22,0.44,0,0] #m
 pipe_density=10 # number of points to inscribe around the pipe
 
 for j in range(len(rpipes)):
@@ -227,7 +227,7 @@ print("There are %d outer coils."%len(u23_contours.allsegs))
 
 for i,cnt in enumerate(u23_contours.allsegs):
     seg=cnt[0] # if there are multiple contours at same level there will be more than one seg
-    # these go from outer to inner
+    # these go from inner to outer!
     if(float(options.simplify)<0):
         x=seg[:,0]
         y=seg[:,1]
@@ -253,21 +253,21 @@ for i,cnt in enumerate(u23_contours.allsegs):
         x_around=[]
         y_around=[]
         z_around=[]
-        if(ys[0]<ypipe+rpipe and ys[0]>ypipe-rpipe):
-            print('Pipe conflict!')
-            x_around=[a_out/2]*pipe_density
-            if(ys[0]>ypipe): # go around the top side
-                theta_start=math.atan2(ys[0]-ypipe,sqrt(rpipe**2-(ys[0]-ypipe)**2))
+        if(ynew[-1]<ypipe+rpipe and ynew[-1]>ypipe-rpipe):
+            print('Pipe conflict inner!')
+            print(xnew[-1],ynew[-1],znew[-1])
+            x_around=[xnew[-1]]*pipe_density
+            if(ynew[-1]>ypipe): # go around the top side
+                theta_start=math.atan2(ynew[-1]-ypipe,sqrt(rpipe**2-(ynew[-1]-ypipe)**2))
                 theta_end=pi-theta_start
                 theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
                 y_around=ypipe+rpipe*sin(theta_around)
             else: # go around the bottom side
-                theta_start=math.atan2(ypipe-ys[0],sqrt(rpipe**2-(ys[0]-ypipe)**2))
+                theta_start=math.atan2(ypipe-ynew[-1],sqrt(rpipe**2-(ynew[-1]-ypipe)**2))
                 theta_end=pi-theta_start
                 theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
                 y_around=ypipe-rpipe*sin(theta_around)
             z_around=zpipe-rpipe*cos(theta_around)
-            print(ys[0],y_around,z_around)
         xnew=np.concatenate((xnew,x_around))
         ynew=np.concatenate((ynew,y_around))
         znew=np.concatenate((znew,z_around))
@@ -297,21 +297,21 @@ for i,cnt in enumerate(u23_contours.allsegs):
             x_around=[]
             y_around=[]
             z_around=[]
-            if(ys[0]<ypipe+rpipe and ys[0]>ypipe-rpipe):
-                print('Pipe conflict!')
-                x_around=[a_in/2]*pipe_density
-                if(ys[0]>ypipe): # go around the top side
-                    theta_start=math.atan2(ys[0]-ypipe,sqrt(rpipe**2-(ys[0]-ypipe)**2))
+            if(ynew[-1]<ypipe+rpipe and ynew[-1]>ypipe-rpipe):
+                print('Pipe conflict outer!')
+                print(xnew[-1],ynew[-1],znew[-1],ys[0],ys[-1],ynew[0])
+                x_around=[xnew[-1]]*pipe_density
+                if(ynew[-1]>ypipe): # go around the top side
+                    theta_start=math.atan2(ynew[-1]-ypipe,sqrt(rpipe**2-(ynew[-1]-ypipe)**2))
                     theta_end=pi-theta_start
                     theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
                     y_around=ypipe+rpipe*sin(theta_around)
                 else: # go around the bottom side
-                    theta_start=math.atan2(ypipe-ys[0],sqrt(rpipe**2-(ys[0]-ypipe)**2))
+                    theta_start=math.atan2(ypipe-ynew[-1],sqrt(rpipe**2-(ynew[-1]-ypipe)**2))
                     theta_end=pi-theta_start
                     theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
                     y_around=ypipe-rpipe*sin(theta_around)
                 z_around=zpipe+rpipe*cos(theta_around)
-                print(ys[0],y_around,z_around)
             xnew=np.append(xnew,x_around)
             ynew=np.append(ynew,y_around)
             znew=np.append(znew,z_around)

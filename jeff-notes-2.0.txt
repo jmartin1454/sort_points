@@ -35,3 +35,6 @@
 
 A recent command line that pops up a lot of stuff, writes files, etc.
 ./get_field.py -i .5024 -f data-2.0.txt -s .001 -c -a -p -t
+
+Reoptimization with side pipes
+./get_field_pipes.py -i .287941 -f data-2.0.txt -a -s .001
