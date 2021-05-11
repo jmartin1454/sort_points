@@ -280,7 +280,7 @@ def fitgraph(xdata,ydata,ax):
 
 print('In case you are interested, 4*pi/10 is %f'%(4.*pi/10))
 
-points1d=np.mgrid[-1:1:101j]
+points1d=np.mgrid[-1:1:1001j]
 bx1d,by1d,bz1d=mycoilset.b_prime(0.,points1d,0.)
 fitgraph(points1d,bz1d,ax71)
 ax71.plot(points1d,bz1d,label='$B_z(0,y,0)$')
