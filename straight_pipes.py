@@ -62,7 +62,7 @@ current=float(options.current)
 
 # geometry factors
 a_out = 2.2 # m
-a_in = 1.8 # m
+a_in = 1.4 # m
 
 
 body_coil=coilset()
@@ -154,12 +154,18 @@ if(options.wiggle>0):
     back_face_coil.wiggle(float(options.wiggle))
 
 if(options.traces):
+    fig4 = plt.figure()
+    ax6 = fig4.gca()
+    body_coil.draw_xy(ax6,'-','black')
+    side_coil.draw_xy(ax6,'-','blue')
+    top_coil.draw_xy(ax6,'-','green')
+
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
-    body_coil.draw_coils(ax5,'-','black')
     side_coil.draw_coils(ax5,'-','blue')
     top_coil.draw_coils(ax5,'-','green')
-
+    body_coil.draw_coils(ax5,'-','black')
+    
     body_coil.output_solidworks('body_coil_point_cloud.txt')
     side_coil.output_solidworks('side_coil_point_cloud.txt')
     top_coil.output_solidworks('top_coil_point_cloud.txt')
