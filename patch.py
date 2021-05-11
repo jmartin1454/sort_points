@@ -113,7 +113,13 @@ class coil:
         return b_loop(self.current,self.points,r)
     def b_prime(self,x,y,z):
         return b_loop_2(self.current,self.points,x,y,z)
-
+    def wiggle(self,sigma): # wiggles each point according to normal distribution
+        self.points=self.points+np.random.normal(0,sigma,(len(self.points),3))
+    def wiggle_up(self,sigma): # wiggles whole coil up or down a bit
+        #print(self.points[:,1]) # print second column (y values)
+        # add same random number to all y values.
+        self.points[:,1]=self.points[:,1]+np.random.normal(0,sigma)
+        
 class coilset:
     def __init__(self):
         self.coils=[]
@@ -134,6 +140,11 @@ class coilset:
         for coilnum in range(self.ncoils):
             self.set_current_in_coil(coilnum,i)
 
+    def wiggle(self,sigma):
+        for coil in self.coils:
+            coil.wiggle(sigma)
+            #coil.wiggle_up(sigma)
+            
     def b(self,r):
         b_total=0.
         for coilnum in range(self.ncoils):
@@ -167,6 +178,17 @@ class coilset:
         for number in range(self.ncoils):
             self.draw_coil(number,ax,style,color)
 
+    def draw_xy(self,ax,style='-',color='black'):
+        for number in range(self.ncoils):
+            coil = self.coils[number]
+            points = coil.points
+            points=np.append(points,[points[0]],axis=0) # force draw closed loop
+            x = ([p[0] for p in points])
+            y = ([p[1] for p in points])
+            #z = ([p[2] for p in points])
+            ax.plot(x,y,style,color=color)
+            
+            
     def output_solidworks(self,outfile):
         with open(outfile,'w') as f:
             for number in range(self.ncoils):
