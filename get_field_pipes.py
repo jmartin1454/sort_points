@@ -8,6 +8,7 @@
 # June 16, 2019 Jeff updated to use patch.py classes
 # June 17, 2019 now working properly
 # June 25, 2019 updates for different graphing
+# February 27, 2021 Added rerouting for side pipes
 
 import numpy as np
 import math
@@ -71,6 +72,10 @@ parser.add_option("-s", "--simplify", dest="simplify",
 
 # simplify is used to remove points, making it easier to draw and
 # faster to calculate the field
+
+parser.add_option("-w", "--wiggle", dest="wiggle",
+                  default=-1, help="sigma to wiggle each point (m)",
+                  metavar="sigma")
 
 
 (options, args) = parser.parse_args()
@@ -422,8 +427,11 @@ print("There are %d body coils"%body_coil.ncoils)
 print("There are %d front face coils"%front_face_coil.ncoils)
 print("There are %d back face coils"%back_face_coil.ncoils)
         
+if(options.wiggle>0):
+    body_coil.wiggle(float(options.wiggle))
+    front_face_coil.wiggle(float(options.wiggle))
+    back_face_coil.wiggle(float(options.wiggle))
 
-        
 if(options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
