@@ -38,3 +38,6 @@ A recent command line that pops up a lot of stuff, writes files, etc.
 
 Reoptimization with side pipes
 ./get_field_pipes.py -i .287941 -f data-2.0.txt -a -s .001
+
+Wiggling (see patch.py)
+./get_field_pipes.py -i .287941 -f data-2.0.txt -s .001 -a -t -w .005
