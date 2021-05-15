@@ -73,11 +73,11 @@ a_in_y = 1.98 # m
 a_out_x = 2.31 # m
 a_in_x = 1.98 # m
 
-a_out_z = 2.31 # m
-a_out_y = 2.31 # m
-a_in_y = 1.54 # m
-a_out_x = 2.31 # m
-a_in_x = 1.54 # m
+#a_out_z = 2.31 # m
+#a_out_y = 2.31 # m
+#a_in_y = 1.54 # m
+#a_out_x = 2.31 # m
+#a_in_x = 1.54 # m
 top_spacing=current*(a_out_y-a_in_y)/a_in_x
 a_out_y=a_out_y-top_spacing
 a_in_y=a_in_y-top_spacing
@@ -123,7 +123,9 @@ for y in arange(body_spacing/2,a_out_y/2,body_spacing):
 
 side_spacing=current*(a_out_x-a_in_x)/a_in_x
 
-side_coil=coilset()
+side_coil=[]
+for i in range(4):
+    side_coil.append(coilset())
 n=0
 for y in arange(side_spacing/2,a_out_y/2,side_spacing):
     n=n+1
@@ -146,13 +148,16 @@ for y in arange(side_spacing/2,a_out_y/2,side_spacing):
         point3=(a_out_x/2,y,-a_out_z/2)
         point4=(xpos,y,-a_out_z/2)
     points=np.array((point1,point2,point3,point4))
-    side_coil.add_coil(points)
-    side_coil.add_coil(reflect_x(points,True))
-    side_coil.add_coil(reflect_y(points,False))
-    side_coil.add_coil(reflect_x(reflect_y(points,False),True))
+    side_coil[0].add_coil(points)
+    side_coil[1].add_coil(reflect_x(points,True))
+    side_coil[2].add_coil(reflect_y(points,False))
+    side_coil[3].add_coil(reflect_x(reflect_y(points,False),True))
     
 top_spacing=current*(a_out_y-a_in_y)/a_in_x
-top_coil=coilset()
+
+top_coil=[]
+for i in range(4):
+    top_coil.append(coilset())
 turn_ratio_top=round(1+(a_in_x/(a_out_y-a_in_y))**2)
 
 top_rung=trunc((a_out_y/2-body_spacing/2)/body_spacing)+1
@@ -178,33 +183,43 @@ for x in arange(top_spacing/2,a_out_x/2,top_spacing):
     point3=(xprime,yposprime,-a_out_z/2)
     point4=(xprime,yposprime,a_out_z/2)
     points=np.array((point1,point2,point3,point4))
-    top_coil.add_coil(points)
-    top_coil.add_coil(reflect_x(points,True))
-    top_coil.add_coil(reflect_y(points,False))
-    top_coil.add_coil(reflect_y(reflect_x(points,True),False))
+    top_coil[0].add_coil(points)
+    top_coil[1].add_coil(reflect_x(points,True))
+    top_coil[2].add_coil(reflect_y(points,False))
+    top_coil[3].add_coil(reflect_y(reflect_x(points,True),False))
 
 print("There are %d body coils"%body_coil.ncoils)
-print("There are %d side coils"%side_coil.ncoils)
-print("There are %d top coils"%top_coil.ncoils)
+print("There are %d side coils"%(side_coil[0].ncoils*4))
+print("There are %d top coils"%(top_coil[0].ncoils*4))
 print(body_spacing,side_spacing,top_spacing)
 print("Flux ratio %f"%(body_spacing/side_spacing))
 
 if(options.wiggle>0):
     body_coil.wiggle(float(options.wiggle))
-    front_face_coil.wiggle(float(options.wiggle))
-    back_face_coil.wiggle(float(options.wiggle))
+    for i in range(4):
+        side_coil[i].wiggle(float(options.wiggle))
+        top_coil[i].wiggle(float(options.wiggle))
+
+top_coil[0].move(0,0.01,0)
+top_coil[1].move(0,0.01,0)
+top_coil[2].move(0,-0.001,0)
+top_coil[3].move(0,-0.001,0)
+side_coil[1].move(0.001,0,0)
+side_coil[2].move(0.005,0,0)
 
 if(options.traces):
     fig4 = plt.figure()
     ax6 = fig4.gca()
     body_coil.draw_xy(ax6,'-','black')
-    side_coil.draw_xy(ax6,'-','blue')
-    top_coil.draw_xy(ax6,'-','green')
+    for i in range(4):
+        side_coil[i].draw_xy(ax6,'-','blue')
+        top_coil[i].draw_xy(ax6,'-','green')
 
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
-    side_coil.draw_coils(ax5,'-','blue')
-    top_coil.draw_coils(ax5,'-','green')
+    for i in range(4):
+        side_coil[i].draw_coils(ax5,'-','blue')
+        top_coil[i].draw_coils(ax5,'-','green')
     body_coil.draw_coils(ax5,'-','black')
     
 #    body_coil.output_solidworks('body_coil_point_cloud.txt')
@@ -219,16 +234,20 @@ if(options.traces):
 
 
 body_coil.set_common_current(current)
-top_coil.set_common_current(current)
-side_coil.set_common_current(current)
+for i in range(4):
+    side_coil[i].set_common_current(current)
+    top_coil[i].set_common_current(current)
 
+    
 def vecb(x,y,z):
-    bx_body,by_body,bz_body=body_coil.b_prime(x,y,z)
-    bx_side,by_side,bz_side=side_coil.b_prime(x,y,z)
-    bx_top,by_top,bz_top=top_coil.b_prime(x,y,z)
-    bx=bx_body+bx_side+bx_top
-    by=by_body+by_side+by_top
-    bz=bz_body+bz_side+bz_top
+    bx=0.*x
+    by=0.*y
+    bz=0.*z
+    for coil in ((body_coil,side_coil[0],side_coil[1],side_coil[2],side_coil[3],top_coil[0],top_coil[1],top_coil[2],top_coil[3])):
+        bxtemp,bytemp,bztemp=coil.b_prime(x,y,z)
+        bx=bx+bxtemp
+        by=by+bytemp
+        bz=bz+bztemp
     return bx,by,bz
 
 design_field=-4*pi/10*1.e-6

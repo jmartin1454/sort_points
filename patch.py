@@ -119,6 +119,10 @@ class coil:
         #print(self.points[:,1]) # print second column (y values)
         # add same random number to all y values.
         self.points[:,1]=self.points[:,1]+np.random.normal(0,sigma)
+    def move(self,dx,dy,dz):
+        self.points[:,0]=self.points[:,0]+dx
+        self.points[:,1]=self.points[:,1]+dy
+        self.points[:,2]=self.points[:,2]+dz
         
 class coilset:
     def __init__(self):
@@ -144,6 +148,10 @@ class coilset:
         for coil in self.coils:
             coil.wiggle(sigma)
             #coil.wiggle_up(sigma)
+
+    def move(self,x,y,z):
+        for coil in self.coils:
+            coil.move(x,y,z)
             
     def b(self,r):
         b_total=0.
