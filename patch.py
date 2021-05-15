@@ -123,7 +123,39 @@ class coil:
         self.points[:,0]=self.points[:,0]+dx
         self.points[:,1]=self.points[:,1]+dy
         self.points[:,2]=self.points[:,2]+dz
-        
+    def affine(self,m):
+        self.points[:,0]=m.xx*self.points[:,0]+m.xy*self.points[:,1]+m.xz*self.points[:,2]
+        self.points[:,1]=m.yx*self.points[:,0]+m.yy*self.points[:,1]+m.yz*self.points[:,2]
+        self.points[:,2]=m.zx*self.points[:,0]+m.zy*self.points[:,1]+m.zz*self.points[:,2]
+
+class affine_matrix:
+    def __init__(self):
+        self.xx=1
+        self.xy=0
+        self.xz=0
+        self.yx=0
+        self.yy=1
+        self.yz=0
+        self.zx=0
+        self.zy=0
+        self.zz=1
+    def set_shear_x(self,dxy,dxz):
+        self.xy=dxy
+        self.xz=dxz
+    def set_shear_y(self,dyx,dyz):
+        self.yx=dyx
+        self.yz=dyz
+    def set_shear_z(self,dzx,dzy):
+        self.zx=dzx
+        self.zy=dzy
+    def rotate_z(self,theta):
+        self.xx=self.xx*cos(theta)+self.yx*sin(theta)
+        self.xy=self.xy*cos(theta)+self.yy*sin(theta)
+        self.xz=self.xz*cos(theta)+self.yz*sin(theta)
+        self.yx=self.xx*(-sin(theta))+self.yx*cos(theta)
+        self.yy=self.xy*(-sin(theta))+self.yy*cos(theta)
+        self.yz=self.xz*(-sin(theta))+self.yz*cos(theta)
+
 class coilset:
     def __init__(self):
         self.coils=[]
@@ -132,8 +164,7 @@ class coilset:
     def add_coil(self,points):
         c=coil(points,0.0)
         self.coils.append(c)
-        self.ncoils=len(self.coils)
-        
+        self.ncoils=len(self.coils)     
     def set_current_in_coil(self,coilnum,i):
         if(coilnum<self.ncoils):
             self.coils[coilnum].set_current(i)
@@ -152,6 +183,10 @@ class coilset:
     def move(self,x,y,z):
         for coil in self.coils:
             coil.move(x,y,z)
+
+    def affine(self,m):
+        for coil in self.coils:
+            coil.affine(m)
             
     def b(self,r):
         b_total=0.

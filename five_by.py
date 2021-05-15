@@ -200,12 +200,17 @@ if(options.wiggle>0):
         side_coil[i].wiggle(float(options.wiggle))
         top_coil[i].wiggle(float(options.wiggle))
 
-top_coil[0].move(0,0.01,0)
-top_coil[1].move(0,0.01,0)
-top_coil[2].move(0,-0.001,0)
-top_coil[3].move(0,-0.001,0)
-side_coil[1].move(0.001,0,0)
-side_coil[2].move(0.005,0,0)
+#top_coil[0].move(0,0.01,0)
+#top_coil[1].move(0,0.01,0)
+#top_coil[2].move(0,-0.001,0)
+#top_coil[3].move(0,-0.001,0)
+#side_coil[1].move(0.001,0,0)
+#side_coil[2].move(0.005,0,0)
+
+m=affine_matrix()
+m.set_shear_x(.001,0)
+
+side_coil[0].affine(m)
 
 if(options.traces):
     fig4 = plt.figure()
