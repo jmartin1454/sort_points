@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 # Sorting points by Jeff and Rosie
 # Jeff updating to parse u3 and u2-u3 for double-cos box coil
@@ -164,6 +164,14 @@ if (options.plotmesh):
 ax1.axis((0,a_out/2, 0,a_out/2))
 fig.colorbar(u1_contours,ax=ax1)
 
+# In python3, there are a bunch of empty contours, which I am cutting
+# out using the following commands
+u23_contours.allsegs=[x for x in u23_contours.allsegs if x]
+u3_contours.allsegs=[x for x in u3_contours.allsegs if x]
+u1_contours.allsegs=[x for x in u1_contours.allsegs if x]
+
+
+
 gcc_x=.444 #m, guide center-to-center in x direction
 gcc_y=.764 #m, guide center-to-center in y direction
 gdia=.15 #m, guide diameter
@@ -192,7 +200,7 @@ if (options.contours):
         x=seg[:,0]
         y=seg[:,1]
         ax3.plot(x,y,'.-',color='black',ms=1)
-        if(options.simplify>0):
+        if(float(options.simplify)>0):
             segsimp=simplify_coords_vw(seg,float(options.simplify))
             xsimp=segsimp[:,0]
             ysimp=segsimp[:,1]
@@ -204,7 +212,7 @@ if (options.contours):
         x=seg[:,0]
         y=seg[:,1]
         ax4.plot(x,y,'.-',color='black',ms=1)
-        if(options.simplify>0):
+        if(float(options.simplify)>0):
             segsimp=simplify_coords_vw(seg,float(options.simplify))
             xsimp=segsimp[:,0]
             ysimp=segsimp[:,1]
@@ -214,7 +222,7 @@ if (options.contours):
         x=seg[:,0]
         y=seg[:,1]
         ax4.plot(x,y,'.-',color='black',ms=1)
-        if(options.simplify>0):
+        if(float(options.simplify)>0):
             segsimp=simplify_coords_vw(seg,float(options.simplify))
             xsimp=segsimp[:,0]
             ysimp=segsimp[:,1]
@@ -324,12 +332,13 @@ for i,cnt in enumerate(u23_contours.allsegs):
         xnew=np.append(xnew,xnew[0])
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
-    points=np.array(zip(xnew,ynew,znew))
+    points=np.column_stack((xnew,ynew,znew))
+    print(points)
     body_coil.add_coil(points)
-
+    
     # reflect through xz-plane
     ynew=-ynew
-    points=np.array(zip(xnew,ynew,znew))
+    points=np.column_stack((xnew,ynew,znew))
     body_coil.add_coil(points)
     if not mirrored:
         ynew=-ynew # put it back for a sec
@@ -339,14 +348,14 @@ for i,cnt in enumerate(u23_contours.allsegs):
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
         znew=np.flip(znew,0)
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         body_coil.add_coil(points)
         # and through the xz-plane
         ynew=-ynew
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         body_coil.add_coil(points)
 
-
+        
 # now for the face plates
 front_face_coil=coilset()
 back_face_coil=coilset()
@@ -371,22 +380,22 @@ if (not options.nou1):
         ynew=np.concatenate((ynew,np.delete(np.flip(ys,0),[0,len(ys)-1])))
         ynew=np.concatenate((ynew,np.flip(y,0)))
         znew=[-a_out/2]*len(ynew)
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         back_face_coil.add_coil(points)
         # mirror through xy-plane
         znew=[a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         front_face_coil.add_coil(points)
         # mirror through xz-plane
         ynew=-ynew
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         front_face_coil.add_coil(points)
         znew=[-a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)    
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         back_face_coil.add_coil(points)
 else:
     for i,cnt in enumerate(u3_contours.allsegs):
@@ -405,22 +414,22 @@ else:
         xnew=np.concatenate((xnew,[xnew[0]])) # really force closing the loop
         ynew=np.concatenate((ynew,[ynew[0]]))
         znew=[-a_out/2]*len(ynew)
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         back_face_coil.add_coil(points)
         # mirror through xy-plane
         znew=[a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         front_face_coil.add_coil(points)
         # mirror through xz-plane
         ynew=-ynew
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         front_face_coil.add_coil(points)
         znew=[-a_out/2]*len(ynew)
         xnew=np.flip(xnew,0)
         ynew=np.flip(ynew,0)    
-        points=np.array(zip(xnew,ynew,znew))
+        points=np.column_stack((xnew,ynew,znew))
         back_face_coil.add_coil(points)
 
 print("There are %d body coils"%body_coil.ncoils)
