@@ -333,9 +333,8 @@ for i,cnt in enumerate(u23_contours.allsegs):
         ynew=np.append(ynew,ynew[0])
         znew=np.append(znew,znew[0])
     points=np.column_stack((xnew,ynew,znew))
-    print(points)
     body_coil.add_coil(points)
-    
+
     # reflect through xz-plane
     ynew=-ynew
     points=np.column_stack((xnew,ynew,znew))
@@ -355,7 +354,7 @@ for i,cnt in enumerate(u23_contours.allsegs):
         points=np.column_stack((xnew,ynew,znew))
         body_coil.add_coil(points)
 
-        
+
 # now for the face plates
 front_face_coil=coilset()
 back_face_coil=coilset()

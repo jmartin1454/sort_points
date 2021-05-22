@@ -127,7 +127,14 @@ class coil:
         self.points[:,0]=m.xx*self.points[:,0]+m.xy*self.points[:,1]+m.xz*self.points[:,2]
         self.points[:,1]=m.yx*self.points[:,0]+m.yy*self.points[:,1]+m.yz*self.points[:,2]
         self.points[:,2]=m.zx*self.points[:,0]+m.zy*self.points[:,1]+m.zz*self.points[:,2]
-
+    def length(self):
+        ell=0
+        for j in range(len(self.points)):
+            dr=self.points[j-1]-self.points[j]
+            moddr=sqrt(dr[0]**2+dr[1]**2+dr[2]**2)
+            ell=ell+moddr
+        return ell
+        
 class affine_matrix:
     def __init__(self):
         self.xx=1
@@ -204,7 +211,13 @@ class coilset:
             b_total_y=b_total_y+b_coil_y
             b_total_z=b_total_z+b_coil_z
         return b_total_x,b_total_y,b_total_z
-        
+
+    def length(self):
+        ell=0
+        for coilnum in range(self.ncoils):
+            ell=ell+self.coils[coilnum].length()
+        return ell
+    
     def draw_coil(self,number,ax,style,color):
         coil = self.coils[number]
         points = coil.points
