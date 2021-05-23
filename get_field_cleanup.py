@@ -535,7 +535,9 @@ if(options.traces):
         l=l+thisl
     print('Total length %f'%l)
 
-    ohmkm=14.7
+    # table from https://bulkwire.com/magnet-wire
+    
+    ohmkm=21.37
     print('18 AWG is %f Ohm/km'%ohmkm)
 
     resistance=l*ohmkm/1000
@@ -547,7 +549,7 @@ if(options.traces):
     power=current*voltage
     print('Power %f W'%power)
 
-    kgkm=7.3
+    kgkm=7.47
     print('18 AWG is %f kg/km'%kgkm)
 
     weight=l*kgkm/1000
