@@ -84,6 +84,9 @@ parser.add_option("-s", "--simplify", dest="simplify",
                   default=-1, help="factor for VW simplification",
                   metavar="factor")
 
+parser.add_option("-x", dest="x", default=False, action="store_true",
+                  help="use file containing parameters")
+
 # simplify is used to remove points, making it easier to draw and
 # faster to calculate the field
 
@@ -113,8 +116,17 @@ a_in = 2.0 # m
 # specify levels
 
 current=float(options.current) # amperes; design current = step in scalar potential
+alpha=0
+beta=0
 
-def get_levels(current):
+if options.x:
+    xarray=np.loadtxt("x.txt")
+    current=xarray[0]
+    alpha=xarray[1]
+    beta=xarray[2]
+    print("Using current %f and alpha %f and beta %f"%(current,alpha,beta))
+
+def get_levels(current,alpha=0,beta=0):
     maxu1=np.max(u1_inner) # u1 always goes positive
     maxu23=np.max(u2_outer-u3_outer)
     minu23=np.min(u2_outer-u3_outer)
@@ -128,12 +140,11 @@ def get_levels(current):
     maxlevel=(nmax+.5)*current
     minlevel=(nmin+.5)*current
     levels=[]
-    alpha=0.0
     for n in range(nmin,nmax):
-        levels.append((n+.5)*current+(n+.5)**2*alpha)
+        levels.append((n+.5)*current+(n+.5)**3*alpha/1e6+(n+.5)**5*beta/1e10)
     return levels
 
-levels=get_levels(current)
+mylevels=get_levels(current)
 
 # mask out bad triangles that will be created when automatically
 # triangulating outer (concave) region.
@@ -179,7 +190,7 @@ def wind_coils(levels):
 
     fig,ax1=plt.subplots()
 
-    #ax1.triplot(tri, color='0.7') # if you want to see the triangulation
+    #ax1.triplot(tri,color='0.7') # if you want to see the triangulation
 
     #u23_contours=ax1.tricontour(tri_refi,u23_refi,levels=levels)
     u23_contours=ax1.tricontour(tri,u2_outer-u3_outer,levels=levels)
@@ -189,12 +200,12 @@ def wind_coils(levels):
     fig.colorbar(u23_contours,ax=ax1)
 
     #u3_contours=ax1.tricontour(tri_refi, u3_refi, levels=levels)
-    u3_contours=ax1.tricontour(tri, u3_outer, levels=levels)
+    u3_contours=ax1.tricontour(tri,u3_outer,levels=levels)
     if (options.plotmesh):
         ax1.plot(x_outer,y_outer,'k.')
 
     #u1_contours=ax1.tricontour(x_inner, y_inner, u1_inner, levels=levels)
-    u1_contours=ax1.tricontour(tri_inner, u1_inner, levels=levels)
+    u1_contours=ax1.tricontour(tri_inner,u1_inner,levels=levels)
     if (options.plotmesh):
         ax1.plot(x_inner,y_inner,'k.')
 
@@ -489,7 +500,7 @@ def wind_coils(levels):
     all_coil_list.append(back_face_coil)
     return all_coil_list
 
-all_coil_list=wind_coils(levels)
+all_coil_list=wind_coils(mylevels)
 
 for coil in all_coil_list:
     print("There are %d coils in this coil"%coil.ncoils)
@@ -523,7 +534,24 @@ if(options.traces):
         print('Length %f'%thisl)
         l=l+thisl
     print('Total length %f'%l)
-    
+
+    ohmkm=14.7
+    print('18 AWG is %f Ohm/km'%ohmkm)
+
+    resistance=l*ohmkm/1000
+    print('Total resistance %f Ohm'%resistance)
+
+    voltage=current*resistance
+    print('Voltage %f V'%voltage)
+
+    power=current*voltage
+    print('Power %f W'%power)
+
+    kgkm=7.3
+    print('18 AWG is %f kg/km'%kgkm)
+
+    weight=l*kgkm/1000
+    print('Weight %f kg'%weight)
     plt.show()
 
 def vecb(coil_list,x,y,z):
@@ -661,7 +689,13 @@ def dofitxyz(coil_list):
     poptx=fitnograph(points1d,by1d)
     bx1d,by1d,bz1d=vecb(coil_list,0.,0.,points1d)
     poptz=fitnograph(points1d,by1d)
-    return sqrt(popty[1]**2+poptx[1]**2+poptz[1]**2)
+    wt2=1/3*.5**3
+    wt4=1/5*.5**5
+    wt6=1/7*.5**7
+    #return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2
+    #            +(popty[2]**2+poptx[2]**2+poptz[2]**2)*wt4**2
+    #            +(popty[3]**2+poptx[3]**2+poptz[3]**2)*wt6**2)
+    return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2)
 
 
 dofit(all_coil_list)
@@ -726,16 +760,36 @@ if options.roi:
 
 def fun(x):
     current=x[0]
-    levels=get_levels(current)
+    #alpha=x[1]
+    #beta=x[2]
+    levels=get_levels(current,alpha,beta)
     all_coil_list=wind_coils(levels)
     for coil in all_coil_list:
         coil.set_common_current(current)
     fitresult=dofitxyz(all_coil_list)
-    err=fitresult**2*1e18
-    print('FUN',current,err)
+    err=fitresult**2*1e20
+    print('FUN',x,err)
     return err
 
 if not options.graph:
+    # sweeping current
+    current_step=0.0001
+    theis=[]
+    errs=[]
+    for i in arange(current-1000*current_step,current+1000*current_step,current_step):
+        err=fun([i])
+        theis.append(i)
+        errs.append(err)
+    fig8, (ax81) = plt.subplots(nrows=1)
+    ax81.plot(theis,errs)
+    plt.show()
+
+    # fitting current
+    
     #res=minimize(fun,[.28794],options={'gtol':1e-6})
-    res=minimize(fun,[current],method='Nelder-Mead')
-    print('res.x',res.x)
+    #res=minimize(fun,[current,alpha,beta],method='Nelder-Mead')
+    #res=minimize(fun,[current],method='Nelder-Mead')
+    #print('res.x',res.x)
+    #with open('x.txt','w') as stream:
+    #    for x in res.x:
+    #        stream.write(str(x)+'\n')

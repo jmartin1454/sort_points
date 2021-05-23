@@ -41,3 +41,6 @@ Reoptimization with side pipes
 
 Wiggling (see patch.py)
 ./get_field_pipes.py -i .287941 -f data-2.0.txt -s .001 -a -t -w .005
+
+found using optimization pipes on, n=15 on pipes
+./get_field_cleanup.py -i .20960938 -f data-2.0.txt -a -s .000001 -grp
