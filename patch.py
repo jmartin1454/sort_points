@@ -4,6 +4,8 @@
 from scipy.constants import mu_0, pi
 import numpy as np
 from Arrow3D import *
+from mayavi import mlab
+
 
 def b_segment(i,p0,p1,r):
     # p0 is one end (vector in m)
@@ -172,6 +174,7 @@ class coilset:
         c=coil(points,0.0)
         self.coils.append(c)
         self.ncoils=len(self.coils)     
+
     def set_current_in_coil(self,coilnum,i):
         if(coilnum<self.ncoils):
             self.coils[coilnum].set_current(i)
@@ -234,6 +237,20 @@ class coilset:
         for number in range(self.ncoils):
             self.draw_coil(number,ax,style,color)
 
+    def draw_coil_mayavi(self,number):
+        coil = self.coils[number]
+        points = coil.points
+        points=np.append(points,[points[0]],axis=0) # force draw closed loop
+        x = ([p[0] for p in points])
+        y = ([p[1] for p in points])
+        z = ([p[2] for p in points])
+        mlab.plot3d(z,x,y,color=(1,1,1),tube_radius=.001)
+
+    def draw_coils_mayavi(self):
+        for number in range(self.ncoils):
+            self.draw_coil_mayavi(number)
+
+            
     def draw_xy(self,ax,style='-',color='black'):
         for number in range(self.ncoils):
             coil = self.coils[number]

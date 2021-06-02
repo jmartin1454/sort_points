@@ -10,6 +10,7 @@
 # June 25, 2019 updates for different graphing
 # February 27, 2021 Added rerouting for side pipes
 # May 21, 2021 Divide up into multiple coils for deformation studies
+# June 1, 2021 Start to add pipes class, add mayavi use for traces
 
 import numpy as np
 import math
@@ -29,6 +30,7 @@ from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon
 
 from patch import *
+from pipes import *
 
 from scipy.optimize import curve_fit
 from scipy.optimize import minimize
@@ -84,11 +86,14 @@ parser.add_option("-s", "--simplify", dest="simplify",
                   default=-1, help="factor for VW simplification",
                   metavar="factor")
 
+# simplify is used to remove points, making it easier to draw and
+# faster to calculate the field
+
 parser.add_option("-x", dest="x", default=False, action="store_true",
                   help="use file containing parameters")
 
-# simplify is used to remove points, making it easier to draw and
-# faster to calculate the field
+parser.add_option("-1", "--and1", dest="and1", default=False,
+                  action="store_true", help="add one parameter")
 
 parser.add_option("-w", "--wiggle", dest="wiggle",
                   default=-1, help="sigma to wiggle each point (m)",
@@ -116,17 +121,45 @@ a_in = 2.0 # m
 # specify levels
 
 current=float(options.current) # amperes; design current = step in scalar potential
-alpha=0
-beta=0
+
+if options.and1:
+    if options.x:
+        n=len(np.loadtxt("x.txt",ndmin=1))+1
+    else:
+        n=2
+else:
+    n=10 # set what you want here, for the order of the polynomial 2n+1
+xarray=np.zeros(n)
+xarray[0]=current
 
 if options.x:
-    xarray=np.loadtxt("x.txt")
-    current=xarray[0]
-    alpha=xarray[1]
-    beta=xarray[2]
-    print("Using current %f and alpha %f and beta %f"%(current,alpha,beta))
+    xarray_loaded=np.loadtxt("x.txt",ndmin=1)
+    print("Loaded file x.txt: ",xarray_loaded)
+    current=xarray_loaded[0]
+    for i in range(min(n,len(xarray_loaded))):
+        xarray[i]=xarray_loaded[i]
+    
+#def get_levels(current,alpha=0,beta=0):
+#    maxu1=np.max(u1_inner) # u1 always goes positive
+#    maxu23=np.max(u2_outer-u3_outer)
+#    minu23=np.min(u2_outer-u3_outer)
+#    maxu3=np.max(u3_outer)
+#    minu3=np.min(u3_outer)
+#    maxphi=maxu1
+#    minphi=minu23
 
-def get_levels(current,alpha=0,beta=0):
+#    nmax=int(maxphi/current+.5)
+#    nmin=int(minphi/current-.5)
+#    maxlevel=(nmax+.5)*current
+#    minlevel=(nmin+.5)*current
+#    levels=[]
+#    for n in range(nmin,nmax):
+#        levels.append((n+.5)*current+(n+.5)**3*alpha/1e6+(n+.5)**5*beta/1e10)
+#    return levels
+
+def get_levels(parameters):
+    current=parameters[0]
+    
     maxu1=np.max(u1_inner) # u1 always goes positive
     maxu23=np.max(u2_outer-u3_outer)
     minu23=np.min(u2_outer-u3_outer)
@@ -141,10 +174,13 @@ def get_levels(current,alpha=0,beta=0):
     minlevel=(nmin+.5)*current
     levels=[]
     for n in range(nmin,nmax):
-        levels.append((n+.5)*current+(n+.5)**3*alpha/1e6+(n+.5)**5*beta/1e10)
+        thislevel=(n+.5)*current
+        for order in range(1,len(parameters)):
+            thislevel=thislevel+(n+.5)**(2*order+1)*parameters[order]/10**(2*(2*order+1))
+        levels.append(thislevel)
     return levels
 
-mylevels=get_levels(current)
+mylevels=get_levels(xarray)
 
 # mask out bad triangles that will be created when automatically
 # triangulating outer (concave) region.
@@ -217,23 +253,40 @@ def wind_coils(levels):
     u1_contours.allsegs=[x for x in u1_contours.allsegs if x]
 
 
+    # define penetrating pipes
+
+    mypipes=pipelist()
+    
     gcc_x=.444 #m, guide center-to-center in x direction
     gcc_y=.764 #m, guide center-to-center in y direction
     gdia=.15 #m, guide diameter
+
     circle1 = plt.Circle((gcc_x/2,gcc_y/2),gdia/2,color='r')
     circle2 = plt.Circle((0,0),gdia/2,color='r')
     ax1.add_patch(circle1)
     ax1.add_patch(circle2)
 
+    mypipes.add_pipe(gdia/2,gcc_x/2,gcc_y/2,'z')
+    mypipes.add_pipe(gdia/2,gcc_x/2,-gcc_y/2,'z')
+    mypipes.add_pipe(gdia/2,-gcc_x/2,gcc_y/2,'z')
+    mypipes.add_pipe(gdia/2,-gcc_x/2,-gcc_y/2,'z')
+
+    mypipes.add_pipe(gdia/2,0,0,'z')
+
+    
     rpipes=[0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.015,0.015] #m
     ypipes=[0,0,0,0,0,0.4,0.4,0.4,0.4,0.4,0.14,0.185/2] #m
     zpipes=[-0.44,-0.22,0,0.22,0.44,-0.44,-0.22,0,0.22,0.44,0,0] #m
-    pipe_density=10 # number of points to inscribe around the pipe
+    pipe_density=100 # number of points to inscribe around the pipe
     # to remove the pipes, uncomment below
     #rpipes=[]
     #ypipes=[]
     #zpipes=[]
 
+    for j in range(len(rpipes)):
+        mypipes.add_pipe(rpipes[j],ypipes[j],zpipes[j],'x')
+
+    
     for j in range(len(rpipes)):
         ax1.add_patch(plt.Rectangle((a_in/2,ypipes[j]-rpipes[j]),(a_out-a_in)/2,2*rpipes[j]))
 
@@ -498,6 +551,12 @@ def wind_coils(levels):
     all_coil_list=body_list
     all_coil_list.append(front_face_coil)
     all_coil_list.append(back_face_coil)
+    # Apply coil deformations, if to be included in design optimization
+    #body_tr.move(.001,0,0)
+    #body_tr.move(.001,0,0)
+    front_face_coil.move(0,0,.002)
+    back_face_coil.move(0,0,-.002)
+
     return all_coil_list
 
 all_coil_list=wind_coils(mylevels)
@@ -509,7 +568,7 @@ if(options.wiggle>0):
     for coil in all_coil_list:
         coil.wiggle(float(options.wiggle))
 
-# Apply coil deformations
+# Apply coil deformations post winding
 #body_tr.move(.001,0,0)
 #body_tr.move(.001,0,0)
 
@@ -519,6 +578,9 @@ if(options.traces):
     colors=['black','grey','darkgrey','silver','lightgrey','whitesmoke','blue','green']
     for i,coil in enumerate(all_coil_list):
         coil.draw_coils(ax5,'-',colors[i])
+        coil.draw_coils_mayavi()
+    mlab.show()
+    
 
     #testing length method
     
@@ -583,19 +645,19 @@ if (options.planes):
 
     figtest,(axtest1,axtest2,axtest3)=plt.subplots(nrows=3)
     
-    x2d,y2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
+    x2d,y2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,y2d,0.)
     im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest1,format='%.5e')
 
-    x2d,z2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
+    x2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,0.,z2d)
     im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
     figtest.colorbar(im,ax=axtest2,format='%.5e')
 
-    y2d,z2d=np.mgrid[-1.0:1.0:100j,-1.0:1.0:100j]
+    y2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
     im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
@@ -608,7 +670,7 @@ if (options.planes):
     outer_roi=1.5
     inner_roi=1.2
     
-    x2d,y2d=np.mgrid[-outer_roi:outer_roi:100j,-outer_roi:outer_roi:100j]
+    x2d,y2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,y2d,0.)
     bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
     mask=((abs(x2d)<inner_roi)&(abs(y2d)<inner_roi))
@@ -617,7 +679,7 @@ if (options.planes):
     im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
     figouter.colorbar(im,ax=axouter1,format='%.2e')
 
-    x2d,z2d=np.mgrid[-outer_roi:outer_roi:100j,-outer_roi:outer_roi:100j]
+    x2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,0.,z2d)
     bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
     mask=((abs(x2d)<inner_roi)&(abs(z2d)<inner_roi))
@@ -626,7 +688,7 @@ if (options.planes):
     im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
     figouter.colorbar(im,ax=axouter2,format='%.2e')
 
-    y2d,z2d=np.mgrid[-outer_roi:outer_roi:100j,-outer_roi:outer_roi:100j]
+    y2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
     bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
     mask=((abs(y2d)<inner_roi)&(abs(z2d)<inner_roi))
@@ -694,10 +756,10 @@ def dofitxyz(coil_list):
     wt2=1/3*.5**3
     wt4=1/5*.5**5
     wt6=1/7*.5**7
-    #return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2
-    #            +(popty[2]**2+poptx[2]**2+poptz[2]**2)*wt4**2
-    #            +(popty[3]**2+poptx[3]**2+poptz[3]**2)*wt6**2)
-    return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2)
+    return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2
+                +(popty[2]**2+poptx[2]**2+poptz[2]**2)*wt4**2
+                +(popty[3]**2+poptx[3]**2+poptz[3]**2)*wt6**2)
+    #return sqrt((popty[1]**2+poptx[1]**2+poptz[1]**2)*wt2**2)
 
 
 dofit(all_coil_list)
@@ -709,7 +771,7 @@ if options.roi:
     print('Statistics on the ROI')
     print
 
-    x,y,z=np.mgrid[-.49:.49:100j,-.49:.49:100j,-.49:.49:100j]
+    x,y,z=np.mgrid[-.3:.3:61j,-.3:.3:61j,-.3:.3:61j]
 
     rcell=0.3 # m, cell radius
     hcell=0.1601 # m, cell height
@@ -762,9 +824,7 @@ if options.roi:
 
 def fun(x):
     current=x[0]
-    #alpha=x[1]
-    #beta=x[2]
-    levels=get_levels(current,alpha,beta)
+    levels=get_levels(x)
     all_coil_list=wind_coils(levels)
     for coil in all_coil_list:
         coil.set_common_current(current)
@@ -773,25 +833,25 @@ def fun(x):
     print('FUN',x,err)
     return err
 
+from scipy.optimize import Bounds
+    
 if not options.graph:
     # sweeping current
-    current_step=0.0001
-    theis=[]
-    errs=[]
-    for i in arange(current-1000*current_step,current+1000*current_step,current_step):
-        err=fun([i])
-        theis.append(i)
-        errs.append(err)
-    fig8, (ax81) = plt.subplots(nrows=1)
-    ax81.plot(theis,errs)
-    plt.show()
+    #current_step=0.0001
+    #theis=[]
+    #errs=[]
+    #for i in arange(current-20*current_step,current+20*current_step,current_step):
+    #    err=fun([i])
+    #    theis.append(i)
+    #    errs.append(err)
+    #fig8, (ax81) = plt.subplots(nrows=1)
+    #ax81.plot(theis,errs)
+    #ax81.set_yscale('log')
+    #plt.show()
 
     # fitting current
     
-    #res=minimize(fun,[.28794],options={'gtol':1e-6})
-    #res=minimize(fun,[current,alpha,beta],method='Nelder-Mead')
+    res=minimize(fun,xarray,method='Nelder-Mead')
     #res=minimize(fun,[current],method='Nelder-Mead')
-    #print('res.x',res.x)
-    #with open('x.txt','w') as stream:
-    #    for x in res.x:
-    #        stream.write(str(x)+'\n')
+    print('res.x',res.x)
+    np.savetxt('x.txt',res.x)
