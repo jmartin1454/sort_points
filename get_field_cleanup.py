@@ -277,7 +277,7 @@ def wind_coils(levels):
     rpipes=[0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.03,0.015,0.015] #m
     ypipes=[0,0,0,0,0,0.4,0.4,0.4,0.4,0.4,0.14,0.185/2] #m
     zpipes=[-0.44,-0.22,0,0.22,0.44,-0.44,-0.22,0,0.22,0.44,0,0] #m
-    pipe_density=100 # number of points to inscribe around the pipe
+    pipe_density=10 # number of points to inscribe around the pipe
     # to remove the pipes, uncomment below
     #rpipes=[]
     #ypipes=[]
@@ -286,14 +286,29 @@ def wind_coils(levels):
     for j in range(len(rpipes)):
         mypipes.add_pipe(rpipes[j],ypipes[j],zpipes[j],'x')
 
-    
     for j in range(len(rpipes)):
         ax1.add_patch(plt.Rectangle((a_in/2,ypipes[j]-rpipes[j]),(a_out-a_in)/2,2*rpipes[j]))
 
+    rpipes_floor=[0.0697/2,0.0697/2,0.0697/2,0.0697/2,
+                  .015,.015,.015,.015,.015,.015,.015,
+                  .015,.015,.015,.015,.015,.015,.015] #m
+    xpipes_floor=[0,0,0,0.2,
+                  .38,.38,.38,.38,.38,.38,.38,
+                  .795,.795,.795,.795,.795,.795,.795] #m
+    zpipes_floor=[-0.2,0,0.2,0,
+                  -.41-.35-.25,-.41-.35,-.41,0,.41,.41+.35,.41+.35+.25,
+                  -.41-.35-.25,-.41-.35,-.41,0,.41,.41+.35,.41+.35+.25] #m
+
+
+    for j in range(len(rpipes_floor)):
+        mypipes.add_pipe(rpipes_floor[j],zpipes_floor[j],xpipes_floor[j],'y')
+
+    for j in range(len(rpipes_floor)):
+        ax1.add_patch(plt.Rectangle((xpipes_floor[j]-rpipes_floor[j],a_in/2),2*rpipes_floor[j],(a_out-a_in)/2))
+        
     if not options.graph:
         plt.close()
     plt.show()
-
 
     ## extracting all the contours and graphing them
     if (options.contours):
@@ -380,8 +395,8 @@ def wind_coils(levels):
             y_around=[]
             z_around=[]
             if(ynew[-1]<ypipe+rpipe and ynew[-1]>ypipe-rpipe):
-                #print('Pipe conflict inner!')
-                #print(xnew[-1],ynew[-1],znew[-1])
+                print('Pipe conflict inner! Horizontal')
+                print(xnew[-1],ynew[-1],znew[-1])
                 x_around=[xnew[-1]]*pipe_density
                 if(ynew[-1]>ypipe): # go around the top side
                     theta_start=math.atan2(ynew[-1]-ypipe,sqrt(rpipe**2-(ynew[-1]-ypipe)**2))
@@ -397,6 +412,39 @@ def wind_coils(levels):
             xnew=np.concatenate((xnew,x_around))
             ynew=np.concatenate((ynew,y_around))
             znew=np.concatenate((znew,z_around))
+        # check for vertical pipe conflict
+        x_arounds=[]
+        y_arounds=[]
+        z_arounds=[]
+        for j in range(len(rpipes_floor)):
+            rpipe=rpipes_floor[j]
+            xpipe=xpipes_floor[j]
+            zpipe=zpipes_floor[j]
+            x_around=[]
+            y_around=[]
+            z_around=[]
+            if(xnew[-1]<xpipe+rpipe and xnew[-1]>xpipe-rpipe):
+                print('Pipe conflict inner! Vertical')
+                print(xnew[-1],ynew[-1],znew[-1])
+                y_around=[ynew[-1]]*pipe_density
+                if(xnew[-1]>xpipe): # go around the right side
+                    theta_start=math.atan2(xnew[-1]-xpipe,sqrt(rpipe**2-(xnew[-1]-xpipe)**2))
+                    theta_end=pi-theta_start
+                    theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
+                    x_around=xpipe+rpipe*sin(theta_around)
+                else: # go around the left side
+                    theta_start=math.atan2(xpipe-xnew[-1],sqrt(rpipe**2-(xnew[-1]-xpipe)**2))
+                    theta_end=pi-theta_start
+                    theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
+                    x_around=xpipe-rpipe*sin(theta_around)
+                z_around=zpipe-rpipe*cos(theta_around)
+                print(x_around,y_around,z_around)
+            x_arounds=np.concatenate((x_arounds,x_around))
+            y_arounds=np.concatenate((y_arounds,y_around))
+            z_arounds=np.concatenate((z_arounds,z_around))
+        xnew=np.concatenate((xnew,x_arounds))
+        ynew=np.concatenate((ynew,y_arounds))
+        znew=np.concatenate((znew,z_arounds))
         xnew=np.concatenate((xnew,xs))
         ynew=np.concatenate((ynew,ys))
         znew=np.concatenate((znew,zs))
@@ -406,6 +454,11 @@ def wind_coils(levels):
             xnew=np.concatenate((xnew,np.delete(-x,0))) # avoid repeating point
             ynew=np.concatenate((ynew,np.delete(y,0)))
             znew=np.concatenate((znew,np.delete(zs,0)))
+
+            xnew=np.concatenate((xnew,-np.flip(x_arounds,0)))
+            ynew=np.concatenate((ynew,np.flip(y_arounds,0)))
+            znew=np.concatenate((znew,np.flip(z_arounds,0)))
+
             xnew=np.concatenate((xnew,-xs))
             ynew=np.concatenate((ynew,ys))
             znew=np.concatenate((znew,z))
@@ -440,6 +493,36 @@ def wind_coils(levels):
                         theta_end=pi-theta_start
                         theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
                         y_around=ypipe-rpipe*sin(theta_around)
+                    z_around=zpipe+rpipe*cos(theta_around)
+                xnew=np.append(xnew,x_around)
+                ynew=np.append(ynew,y_around)
+                znew=np.append(znew,z_around)
+            # check for pipe conflict (Vertical)
+            for j in range(len(rpipes_floor)):
+                rpipe=rpipes_floor[len(rpipes_floor)-1-j]
+                xpipe=xpipes_floor[len(rpipes_floor)-1-j]
+                zpipe=zpipes_floor[len(rpipes_floor)-1-j] # pipes
+                                              # specified in direction
+                                              # of increasing z; we're
+                                              # going in the
+                                              # decreasing z direction
+                x_around=[]
+                y_around=[]
+                z_around=[]
+                if(xnew[-1]<xpipe+rpipe and xnew[-1]>xpipe-rpipe):
+                    #print('Pipe conflict outer!')
+                    #print(xnew[-1],ynew[-1],znew[-1],ys[0],ys[-1],ynew[0])
+                    y_around=[ynew[-1]]*pipe_density
+                    if(xnew[-1]>xpipe): # go around the right side
+                        theta_start=math.atan2(xnew[-1]-xpipe,sqrt(rpipe**2-(xnew[-1]-xpipe)**2))
+                        theta_end=pi-theta_start
+                        theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
+                        x_around=xpipe+rpipe*sin(theta_around)
+                    else: # go around the left side
+                        theta_start=math.atan2(xpipe-xnew[-1],sqrt(rpipe**2-(xnew[-1]-xpipe)**2))
+                        theta_end=pi-theta_start
+                        theta_around=[theta_start+(theta_end-theta_start)*i/(pipe_density-1) for i in range(0,pipe_density)]
+                        x_around=xpipe-rpipe*sin(theta_around)
                     z_around=zpipe+rpipe*cos(theta_around)
                 xnew=np.append(xnew,x_around)
                 ynew=np.append(ynew,y_around)

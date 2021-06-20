@@ -44,3 +44,11 @@ Wiggling (see patch.py)
 
 found using optimization pipes on, n=15 on pipes
 ./get_field_cleanup.py -i .20960938 -f data-2.0.txt -a -s .000001 -grp
+
+found using optimization near this value, using face coils spaced off by 2 mm.
+jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ cat x.txt 
+0.20702539991352648
+0.09188120063580907
+-0.023442352178957057
+jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ ./get_field_cleanup.py -x -f data-2.0.txt -a -s .000001 -grp
+
