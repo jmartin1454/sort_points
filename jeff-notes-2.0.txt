@@ -52,3 +52,20 @@ jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ cat x.txt
 -0.023442352178957057
 jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ ./get_field_cleanup.py -x -f data-2.0.txt -a -s .000001 -grp
 
+with 5 coils for each, mimic traces on circuit board...
+
+./get_field_sheets.py -i .207 -f data-2.0.txt -a -s .001 -grp
+
+Another one found in the course of optimizations with single wires, but making wider traces doesn't matter...
+jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ cat x.txt
+1.738640537962755084e-01
+8.845242771457748066e-02
+0.000000000000000000e+00
+-5.059112430454889425e-02
+0.000000000000000000e+00
+0.000000000000000000e+00
+0.000000000000000000e+00
+0.000000000000000000e+00
+6.250000000000000130e-05
+1.250000000000000026e-04
+jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ ./get_field_sheets.py -i .207 -f data-2.0.txt -a -s .001 -xgrp
