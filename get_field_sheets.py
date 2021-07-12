@@ -11,6 +11,8 @@
 # February 27, 2021 Added rerouting for side pipes
 # May 21, 2021 Divide up into multiple coils for deformation studies
 # June 1, 2021 Start to add pipes class, add mayavi use for traces
+# July 9, 2021 allow distributed currents per wire, mimicking PCB traces
+# grep "nspread" for details
 
 import numpy as np
 import math
@@ -157,8 +159,8 @@ if options.x:
 #        levels.append((n+.5)*current+(n+.5)**3*alpha/1e6+(n+.5)**5*beta/1e10)
 #    return levels
 
-delta_n_spread=0.1 # relative width of trace
-nspread=5 # number of wires to use to make up trace
+delta_n_spread=0.1 # relative width of trace (relative to 1)
+nspread=1 # number of wires to use to make up trace
 def get_levels(parameters):
     current=parameters[0]
     
@@ -177,8 +179,11 @@ def get_levels(parameters):
     levels=[]
     for n in range(nmin,nmax):
         for m in range(nspread):
-            delta_n=(m-(nspread-1)/2)/((nspread-1)/2)*delta_n_spread/2
-            print(m,delta_n,n+delta_n)
+            if(nspread>1):
+                delta_n=(m-(nspread-1)/2)/((nspread-1)/2)*delta_n_spread/2
+            else:
+                delta_n=0
+            #print(m,delta_n,n+delta_n)
             thislevel=(n+delta_n+.5)*current
             for order in range(1,len(parameters)):
                 thislevel=thislevel+(n+delta_n+.5)**(2*order+1)*parameters[order]/10**(2*(2*order+1))

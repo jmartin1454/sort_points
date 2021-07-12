@@ -68,4 +68,4 @@ jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ cat x.txt
 0.000000000000000000e+00
 6.250000000000000130e-05
 1.250000000000000026e-04
-jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ ./get_field_sheets.py -i .207 -f data-2.0.txt -a -s .001 -xgrp
+jmartin@LAPTOP-9ALOQ36Q:~/ucn/comsol/sort_points$ ./get_field_sheets.py -f data-2.0.txt -a -s .001 -xgrapt
