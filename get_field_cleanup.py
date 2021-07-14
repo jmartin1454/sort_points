@@ -727,28 +727,44 @@ if (options.planes):
     # show the inner field
 
     figtest,(axtest1,axtest2,axtest3)=plt.subplots(nrows=3)
+    figtest.set_size_inches(5.5,11)
+    figtest.suptitle("Field Magnitude In Coil Interior")
     
     x2d,y2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,y2d,0.)
     im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest1,format='%.5e')
+    
+    figtest.colorbar(im,ax=axtest1,format='%.3e',label="Tesla")
+    axtest1.set_xlabel("x(meter)")
+    axtest1.set_ylabel("y(meter)")
+    axtest1.set_aspect('equal', adjustable='datalim')
 
     x2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,0.,z2d)
     im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest2,format='%.5e')
+    
+    figtest.colorbar(im,ax=axtest2,format='%.3e',label="Tesla")
+    axtest2.set_xlabel("x(meter)")
+    axtest2.set_ylabel("z(meter)")
+    axtest2.set_aspect('equal', adjustable='datalim')
 
     y2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
     im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
-    figtest.colorbar(im,ax=axtest3,format='%.5e')
+    
+    figtest.colorbar(im,ax=axtest3,format='%.3e',label="Tesla")
+    axtest3.set_xlabel("y(meter)")
+    axtest3.set_ylabel("z(meter)")
+    axtest3.set_aspect('equal', adjustable='datalim')
 
     # show the outer field
     
     figouter,(axouter1,axouter2,axouter3)=plt.subplots(nrows=3)
+    figouter.set_size_inches(5.5,11)
+    figouter.suptitle("Field Magnitude Outside Coil")
 
     outer_roi=1.5
     inner_roi=1.2
@@ -760,7 +776,11 @@ if (options.planes):
     x2d_masked=np.ma.masked_where(mask,x2d)
     y2d_masked=np.ma.masked_where(mask,y2d)
     im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
-    figouter.colorbar(im,ax=axouter1,format='%.2e')
+    
+    figtest.colorbar(im,ax=axouter1,format='%.3e',label="Tesla")
+    axouter1.set_xlabel("x(meter)")
+    axouter1.set_ylabel("y(meter)")
+    axouter1.set_aspect('equal', adjustable='datalim')
 
     x2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,0.,z2d)
@@ -769,7 +789,11 @@ if (options.planes):
     x2d_masked=np.ma.masked_where(mask,x2d)
     z2d_masked=np.ma.masked_where(mask,z2d)
     im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
-    figouter.colorbar(im,ax=axouter2,format='%.2e')
+    
+    figtest.colorbar(im,ax=axouter2,format='%.3e',label="Tesla")
+    axouter2.set_xlabel("x(meter)")
+    axouter2.set_ylabel("z(meter)")
+    axouter2.set_aspect('equal', adjustable='datalim')
 
     y2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
@@ -778,8 +802,15 @@ if (options.planes):
     y2d_masked=np.ma.masked_where(mask,y2d)
     z2d_masked=np.ma.masked_where(mask,z2d)
     im=axouter3.pcolor(z2d_masked,y2d_masked,bmod)
-    figouter.colorbar(im,ax=axouter3,format='%.2e')
+    
+    figtest.colorbar(im,ax=axouter3,format='%.3e',label="Tesla")
+    axouter3.set_xlabel("y(meter)")
+    axouter3.set_ylabel("z(meter)")
+    axouter3.set_aspect('equal', adjustable='datalim')
 
+    #tight_layout() reduces white space and text overlap
+    figtest.tight_layout()
+    figouter.tight_layout()
     plt.show()
 
 def fitfunc(x,p0,p2,p4,p6):
