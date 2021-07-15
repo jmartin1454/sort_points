@@ -308,6 +308,12 @@ def wind_coils(levels):
         
     if not options.graph:
         plt.close()
+    
+    fig.suptitle("Wire Winding and Feed Thrus")
+    ax1.set_xlabel("x(meter)")
+    ax1.set_ylabel("y(meter)")
+    ax1.set_aspect('equal', adjustable='datalim')
+    
     plt.show()
 
     ## extracting all the contours and graphing them
@@ -635,7 +641,7 @@ def wind_coils(levels):
     all_coil_list.append(front_face_coil)
     all_coil_list.append(back_face_coil)
     # Apply coil deformations, if to be included in design optimization
-    #body_tr.move(.001,0,0)
+    # body_tr.move(.1,0,0)
     #body_tr.move(.001,0,0)
     front_face_coil.move(0,0,.002)
     back_face_coil.move(0,0,-.002)
@@ -652,17 +658,28 @@ if(options.wiggle>0):
         coil.wiggle(float(options.wiggle))
 
 # Apply coil deformations post winding
-#body_tr.move(.001,0,0)
+# body_tr.move(.1,0,0)
 #body_tr.move(.001,0,0)
 
 if(options.traces):
     fig3 = plt.figure()
     ax5 = fig3.add_subplot(111, projection='3d')
-    colors=['black','grey','darkgrey','silver','lightgrey','whitesmoke','blue','green']
+    
+    fig3.set_size_inches(6.5,6.5)
+    fig3.suptitle("Wire Paths")
+    fig3.tight_layout()
+    
+    ax5.set_xlabel("z(meter)")
+    ax5.set_ylabel("x(meter)")
+    ax5.set_zlabel("y(meter)")
+    
+    ax5.view_init(5,0)
+    #colors=['black','grey','darkgrey','silver','lightgrey','whitesmoke','blue','green']
+    colors=['black','black','black','black','black','black','blue','green']
     for i,coil in enumerate(all_coil_list):
-        coil.draw_coils(ax5,'-',colors[i])
-        coil.draw_coils_mayavi()
-    mlab.show()
+        coil.draw_coils(ax5,'-',color=colors[i])
+        # coil.draw_coils_mayavi()
+    # mlab.show()
     
 
     #testing length method
@@ -732,7 +749,7 @@ if (options.planes):
     
     x2d,y2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,y2d,0.)
-    im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
+    im=axtest1.pcolormesh(x2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field),shading="nearest")
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest1,format='%.3e',label="Tesla")
@@ -742,7 +759,7 @@ if (options.planes):
 
     x2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,0.,z2d)
-    im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
+    im=axtest2.pcolormesh(z2d,x2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field),shading="nearest")
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest2,format='%.3e',label="Tesla")
@@ -752,7 +769,7 @@ if (options.planes):
 
     y2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
-    im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field))
+    im=axtest3.pcolormesh(z2d,y2d,np.sqrt(bx2d**2+by2d**2+bz2d**2),vmin=abs(min_field),vmax=abs(max_field),shading="nearest")
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest3,format='%.3e',label="Tesla")
@@ -775,7 +792,7 @@ if (options.planes):
     mask=((abs(x2d)<inner_roi)&(abs(y2d)<inner_roi))
     x2d_masked=np.ma.masked_where(mask,x2d)
     y2d_masked=np.ma.masked_where(mask,y2d)
-    im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
+    im=axouter1.pcolor(x2d_masked,y2d_masked,bmod,shading="nearest")
     
     figtest.colorbar(im,ax=axouter1,format='%.3e',label="Tesla")
     axouter1.set_xlabel("x(meter)")
@@ -788,20 +805,23 @@ if (options.planes):
     mask=((abs(x2d)<inner_roi)&(abs(z2d)<inner_roi))
     x2d_masked=np.ma.masked_where(mask,x2d)
     z2d_masked=np.ma.masked_where(mask,z2d)
-    im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
+    im=axouter2.pcolor(z2d_masked,x2d_masked,bmod,shading="nearest")
     
     figtest.colorbar(im,ax=axouter2,format='%.3e',label="Tesla")
     axouter2.set_xlabel("x(meter)")
     axouter2.set_ylabel("z(meter)")
     axouter2.set_aspect('equal', adjustable='datalim')
 
-    y2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
+    y2d,z2d=np.mgrid[-outer_roi:outer_roi:11j,-outer_roi:outer_roi:11j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
     bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
     mask=((abs(y2d)<inner_roi)&(abs(z2d)<inner_roi))
     y2d_masked=np.ma.masked_where(mask,y2d)
     z2d_masked=np.ma.masked_where(mask,z2d)
-    im=axouter3.pcolor(z2d_masked,y2d_masked,bmod)
+    print("y2d = \n" , y2d)
+    print("y2d_masked = \n" , y2d_masked)
+    bmod_masked=np.ma.masked_where(mask,bmod)
+    im=axouter3.pcolor(z2d_masked,y2d_masked,bmod,shading="nearest")
     
     figtest.colorbar(im,ax=axouter3,format='%.3e',label="Tesla")
     axouter3.set_xlabel("y(meter)")

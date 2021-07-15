@@ -4,7 +4,7 @@
 from scipy.constants import mu_0, pi
 import numpy as np
 from Arrow3D import *
-from mayavi import mlab
+# from mayavi import mlab
 
 
 def b_segment(i,p0,p1,r):
@@ -121,6 +121,16 @@ class coil:
         #print(self.points[:,1]) # print second column (y values)
         # add same random number to all y values.
         self.points[:,1]=self.points[:,1]+np.random.normal(0,sigma)
+    def scale(self,dx,dy,dz):
+        self.points[:,0]=self.points[:,0]*dx
+        self.points[:,1]=self.points[:,1]*dy
+        self.points[:,2]=self.points[:,2]*dz
+    # For the n x 3 points in the coil takes an n x 1 boolean array the determines which rows are acted on by the transformation for example:
+    #filter_scale(A,2,1,1,(A[:,0]<5) & (A[:,1]<6)))
+    def filter_scale(self,dx,dy,dz,index_array):
+        self.points[index_array,0]=self.points[index_array,0]*dx
+        self.points[index_array,1]=self.points[index_array,1]*dy
+        self.points[index_array,2]=self.points[index_array,2]*dz
     def move(self,dx,dy,dz):
         self.points[:,0]=self.points[:,0]+dx
         self.points[:,1]=self.points[:,1]+dy
@@ -228,7 +238,7 @@ class coilset:
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
-        ax.plot(z,x,y,style,color=color)
+        ax.plot(z,x,y,style,color=color, linewidth=1)
         #a=Arrow3D([z[0],z[1]],[x[0],x[1]],[y[0],y[1]],mutation_scale=20,lw=3,arrowstyle="-|>",color="r")
         #ax.add_artist(a)
         #ax.text(z[0],x[0],y[0],"%d"%number,color="r")
@@ -237,18 +247,18 @@ class coilset:
         for number in range(self.ncoils):
             self.draw_coil(number,ax,style,color)
 
-    def draw_coil_mayavi(self,number):
-        coil = self.coils[number]
-        points = coil.points
-        points=np.append(points,[points[0]],axis=0) # force draw closed loop
-        x = ([p[0] for p in points])
-        y = ([p[1] for p in points])
-        z = ([p[2] for p in points])
-        mlab.plot3d(z,x,y,color=(1,1,1),tube_radius=.001)
+    # def draw_coil_mayavi(self,number):
+        # coil = self.coils[number]
+        # points = coil.points
+        # points=np.append(points,[points[0]],axis=0) # force draw closed loop
+        # x = ([p[0] for p in points])
+        # y = ([p[1] for p in points])
+        # z = ([p[2] for p in points])
+        # mlab.plot3d(z,x,y,color=(1,1,1),tube_radius=.001)
 
-    def draw_coils_mayavi(self):
-        for number in range(self.ncoils):
-            self.draw_coil_mayavi(number)
+    # def draw_coils_mayavi(self):
+        # for number in range(self.ncoils):
+            # self.draw_coil_mayavi(number)
 
             
     def draw_xy(self,ax,style='-',color='black'):
