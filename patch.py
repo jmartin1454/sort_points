@@ -6,6 +6,8 @@ import numpy as np
 from Arrow3D import *
 # from mayavi import mlab
 
+from os import mkdir, listdir
+
 
 def b_segment(i,p0,p1,r):
     # p0 is one end (vector in m)
@@ -271,7 +273,34 @@ class coilset:
             #z = ([p[2] for p in points])
             ax.plot(x,y,style,color=color)
             
-            
+    def output_csv(self,outfolder,outfile,open=False):
+        """Create a folder and output the points for each coil.  If open==True it removes the last point if it is the same as the first point in the loop."""
+        try:
+            mkdir(outfolder)
+        except OSError as error:
+            print("patch.py: output_csv()" , error)
+        for number in range(self.ncoils):
+            coil = self.coils[number]
+            points = coil.points
+            #output open loops
+            if open:
+                firstpoint=points[0]
+                lastpoint=points[-1]
+                if ((firstpoint[0]==lastpoint[0] and
+                        firstpoint[1]==lastpoint[1] and
+                        firstpoint[2]==lastpoint[2])):
+                    points=points[:-1]#remove end point from loop
+            np.savetxt("%s/%s-%i.csv"%(outfolder,outfile,number) , points)
+
+    def input_csv(self,infolder):
+        """From the given folder read in all files ending in .csv and add them as new coils in the coilset."""
+        files = listdir(infolder)
+        for f in files:
+            # print(f)
+            self.add_coil(np.loadtxt(infolder+"/"+f))
+
+
+
     def output_solidworks(self,outfile):
         with open(outfile,'w') as f:
             for number in range(self.ncoils):
