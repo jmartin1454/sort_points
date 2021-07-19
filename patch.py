@@ -129,18 +129,25 @@ class coil:
         self.points[:,2]=self.points[:,2]*dz
     # For the n x 3 points in the coil takes an n x 1 boolean array the determines which rows are acted on by the transformation for example:
     #filter_scale(A,2,1,1,(A[:,0]<5) & (A[:,1]<6)))
-    def filter_scale(self,dx,dy,dz,index_array):
-        self.points[index_array,0]=self.points[index_array,0]*dx
-        self.points[index_array,1]=self.points[index_array,1]*dy
-        self.points[index_array,2]=self.points[index_array,2]*dz
     def move(self,dx,dy,dz):
         self.points[:,0]=self.points[:,0]+dx
         self.points[:,1]=self.points[:,1]+dy
         self.points[:,2]=self.points[:,2]+dz
+    def rotate(self,alpha,beta,gamma):
+        '''
+        rotate around x then y then z by the given angles.
+        R = R_z(gamma)R_y(beta)R_x(alpha) =
+        '''
+        R =[[np.cos(gamma)*np.cos(beta) , np.cos(gamma)*np.sin(beta)*np.sin(alpha) - np.sin(gamma)*np.cos(alpha) , np.cos(gamma)*np.sin(beta)*np.cos(alpha) + np.sin(gamma)*np.sin(alpha)],
+            [np.sin(gamma)*np.cos(beta) , np.sin(gamma)*np.sin(beta)*np.sin(alpha) + np.cos(gamma)*np.cos(alpha) , np.sin(gamma)*np.sin(beta)*np.cos(alpha) - np.cos(gamma)*np.sin(alpha)],
+            [-np.sin(beta)              , np.cos(beta)*np.sin(alpha)                                             , np.cos(beta)*np.cos(alpha)]]
+        self.points = (np.matmul(R,self.points.T)).T
+
     def affine(self,m):
         self.points[:,0]=m.xx*self.points[:,0]+m.xy*self.points[:,1]+m.xz*self.points[:,2]
         self.points[:,1]=m.yx*self.points[:,0]+m.yy*self.points[:,1]+m.yz*self.points[:,2]
         self.points[:,2]=m.zx*self.points[:,0]+m.zy*self.points[:,1]+m.zz*self.points[:,2]
+        
     def length(self):
         ell=0
         for j in range(len(self.points)):
@@ -201,11 +208,12 @@ class coilset:
         for coil in self.coils:
             coil.wiggle(sigma)
             #coil.wiggle_up(sigma)
-
     def move(self,x,y,z):
         for coil in self.coils:
             coil.move(x,y,z)
-
+    def rotate(self,alpha,beta,gamma):
+        for coil in self.coils:
+            coil.rotate(alpha,beta,gamma)
     def affine(self,m):
         for coil in self.coils:
             coil.affine(m)
@@ -233,21 +241,21 @@ class coilset:
             ell=ell+self.coils[coilnum].length()
         return ell
     
-    def draw_coil(self,number,ax,style,color):
+    def draw_coil(self,number,ax,**plt_kwargs):
         coil = self.coils[number]
         points = coil.points
         points=np.append(points,[points[0]],axis=0) # force draw closed loop
         x = ([p[0] for p in points])
         y = ([p[1] for p in points])
         z = ([p[2] for p in points])
-        ax.plot(z,x,y,style,color=color, linewidth=1)
+        ax.plot(z,x,y,**plt_kwargs)
         #a=Arrow3D([z[0],z[1]],[x[0],x[1]],[y[0],y[1]],mutation_scale=20,lw=3,arrowstyle="-|>",color="r")
         #ax.add_artist(a)
         #ax.text(z[0],x[0],y[0],"%d"%number,color="r")
 
-    def draw_coils(self,ax,style='-',color='black'):
+    def draw_coils(self,ax,**plt_kwargs):
         for number in range(self.ncoils):
-            self.draw_coil(number,ax,style,color)
+            self.draw_coil(number,ax,**plt_kwargs)
 
     # def draw_coil_mayavi(self,number):
         # coil = self.coils[number]
@@ -263,7 +271,7 @@ class coilset:
             # self.draw_coil_mayavi(number)
 
             
-    def draw_xy(self,ax,style='-',color='black'):
+    def draw_xy(self,ax,**plt_kwargs):
         for number in range(self.ncoils):
             coil = self.coils[number]
             points = coil.points
@@ -271,18 +279,36 @@ class coilset:
             x = ([p[0] for p in points])
             y = ([p[1] for p in points])
             #z = ([p[2] for p in points])
-            ax.plot(x,y,style,color=color)
+            ax.plot(x,y,**plt_kwargs)
+    def draw_zy(self,ax,**plt_kwargs):
+        for number in range(self.ncoils):
+            coil = self.coils[number]
+            points = coil.points
+            points=np.append(points,[points[0]],axis=0) # force draw closed loop
+            x = ([p[2] for p in points])
+            y = ([p[1] for p in points])
+            #z = ([p[2] for p in points])
+            ax.plot(x,y,**plt_kwargs)
+    def draw_xz(self,ax,**plt_kwargs):
+        for number in range(self.ncoils):
+            coil = self.coils[number]
+            points = coil.points
+            points=np.append(points,[points[0]],axis=0) # force draw closed loop
+            x = ([p[0] for p in points])
+            y = ([p[2] for p in points])
+            #z = ([p[2] for p in points])
+            ax.plot(x,y,**plt_kwargs)
             
     def output_csv(self,outfolder,outfile,open=False):
         """Create a folder and output the points for each coil.  If open==True it removes the last point if it is the same as the first point in the loop."""
         try:
             mkdir(outfolder)
         except OSError as error:
-            print("patch.py: output_csv()" , error)
+            print("patch.py: output_csv(), expected error, " , error)
         for number in range(self.ncoils):
             coil = self.coils[number]
             points = coil.points
-            #output open loops
+            #output open loops to prevent repeated points that some programs don't handle well.
             if open:
                 firstpoint=points[0]
                 lastpoint=points[-1]
@@ -292,14 +318,15 @@ class coilset:
                     points=points[:-1]#remove end point from loop
             np.savetxt("%s/%s-%i.csv"%(outfolder,outfile,number) , points)
 
-    def input_csv(self,infolder):
+    def input_csv(self,sourcefolder):
         """From the given folder read in all files ending in .csv and add them as new coils in the coilset."""
-        files = listdir(infolder)
+        filenames = listdir(sourcefolder)
+        suffix=".csv"
+        files = [ filename for filename in filenames if filename.endswith( suffix ) ]
+
         for f in files:
             # print(f)
-            self.add_coil(np.loadtxt(infolder+"/"+f))
-
-
+            self.add_coil(np.loadtxt(sourcefolder+"/"+f))
 
     def output_solidworks(self,outfile):
         with open(outfile,'w') as f:
