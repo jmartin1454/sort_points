@@ -672,6 +672,7 @@ if(options.traces):
     for i,coil in enumerate(all_coil_list):
         coil.draw_coils(ax5,'-',colors[i])
         coil.draw_coils_mayavi()
+        coil.output_scad('%s.scad'%colors[i])
     mlab.show()
     
 
