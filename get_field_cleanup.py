@@ -677,7 +677,7 @@ if(options.traces):
     #colors=['black','grey','darkgrey','silver','lightgrey','whitesmoke','blue','green']
     colors=['black','black','black','black','black','black','blue','green']
     for i,coil in enumerate(all_coil_list):
-        coil.draw_coils(ax5,'-',color=colors[i])
+        coil.draw_coils(ax5,linestyle='-',color=colors[i])
         # coil.draw_coils_mayavi()
     # mlab.show()
     
@@ -753,8 +753,8 @@ if (options.planes):
     #im=axtest1.pcolormesh(x2d,y2d,bx2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest1,format='%.3e',label="Tesla")
-    axtest1.set_xlabel("x(meter)")
-    axtest1.set_ylabel("y(meter)")
+    axtest1.set_xlabel("x (m)")
+    axtest1.set_ylabel("y (m)")
     axtest1.set_aspect('equal', adjustable='datalim')
 
     x2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
@@ -763,8 +763,8 @@ if (options.planes):
     #im=axtest2.pcolormesh(z2d,x2d,by2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest2,format='%.3e',label="Tesla")
-    axtest2.set_xlabel("x(meter)")
-    axtest2.set_ylabel("z(meter)")
+    axtest2.set_xlabel("z (m)")
+    axtest2.set_ylabel("x (m)")
     axtest2.set_aspect('equal', adjustable='datalim')
 
     y2d,z2d=np.mgrid[-1.0:1.0:101j,-1.0:1.0:101j]
@@ -773,18 +773,19 @@ if (options.planes):
     #im=axtest3.pcolormesh(z2d,y2d,by2d,vmin=-3e-6,vmax=3e-6)
     
     figtest.colorbar(im,ax=axtest3,format='%.3e',label="Tesla")
-    axtest3.set_xlabel("y(meter)")
-    axtest3.set_ylabel("z(meter)")
-    axtest3.set_aspect('equal', adjustable='datalim')
+    axtest3.set_xlabel("z (m)")
+    axtest3.set_ylabel("y (m)")
+    axtest3.set_aspect('equal',adjustable='datalim')
 
     # show the outer field
-    
+
     figouter,(axouter1,axouter2,axouter3)=plt.subplots(nrows=3)
     figouter.set_size_inches(5.5,11)
-    figouter.suptitle("Field Magnitude Outside Coil")
+    figouter.suptitle("Field Magnitude outside 2.4 m")
 
     outer_roi=1.5
     inner_roi=1.2
+    figouter.suptitle("Field Magnitude outside %4.2f m"%(inner_roi*2))
     
     x2d,y2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,x2d,y2d,0.)
@@ -792,11 +793,11 @@ if (options.planes):
     mask=((abs(x2d)<inner_roi)&(abs(y2d)<inner_roi))
     x2d_masked=np.ma.masked_where(mask,x2d)
     y2d_masked=np.ma.masked_where(mask,y2d)
-    im=axouter1.pcolor(x2d_masked,y2d_masked,bmod,shading="nearest")
-    
+    im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
+
     figtest.colorbar(im,ax=axouter1,format='%.3e',label="Tesla")
-    axouter1.set_xlabel("x(meter)")
-    axouter1.set_ylabel("y(meter)")
+    axouter1.set_xlabel("x (m)")
+    axouter1.set_ylabel("y (m)")
     axouter1.set_aspect('equal', adjustable='datalim')
 
     x2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
@@ -805,14 +806,14 @@ if (options.planes):
     mask=((abs(x2d)<inner_roi)&(abs(z2d)<inner_roi))
     x2d_masked=np.ma.masked_where(mask,x2d)
     z2d_masked=np.ma.masked_where(mask,z2d)
-    im=axouter2.pcolor(z2d_masked,x2d_masked,bmod,shading="nearest")
+    im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
     
     figtest.colorbar(im,ax=axouter2,format='%.3e',label="Tesla")
-    axouter2.set_xlabel("x(meter)")
-    axouter2.set_ylabel("z(meter)")
+    axouter2.set_xlabel("z (m)")
+    axouter2.set_ylabel("x (m)")
     axouter2.set_aspect('equal', adjustable='datalim')
 
-    y2d,z2d=np.mgrid[-outer_roi:outer_roi:11j,-outer_roi:outer_roi:11j]
+    y2d,z2d=np.mgrid[-outer_roi:outer_roi:101j,-outer_roi:outer_roi:101j]
     bx2d,by2d,bz2d=vecb(all_coil_list,0.,y2d,z2d)
     bmod=np.sqrt(bx2d**2+by2d**2+bz2d**2)
     mask=((abs(y2d)<inner_roi)&(abs(z2d)<inner_roi))
@@ -821,11 +822,11 @@ if (options.planes):
     print("y2d = \n" , y2d)
     print("y2d_masked = \n" , y2d_masked)
     bmod_masked=np.ma.masked_where(mask,bmod)
-    im=axouter3.pcolor(z2d_masked,y2d_masked,bmod,shading="nearest")
+    im=axouter3.pcolor(z2d_masked,y2d_masked,bmod)
     
     figtest.colorbar(im,ax=axouter3,format='%.3e',label="Tesla")
-    axouter3.set_xlabel("y(meter)")
-    axouter3.set_ylabel("z(meter)")
+    axouter3.set_xlabel("z (m)")
+    axouter3.set_ylabel("y (m)")
     axouter3.set_aspect('equal', adjustable='datalim')
 
     #tight_layout() reduces white space and text overlap
