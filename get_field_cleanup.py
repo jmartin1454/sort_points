@@ -781,7 +781,6 @@ if (options.planes):
 
     figouter,(axouter1,axouter2,axouter3)=plt.subplots(nrows=3)
     figouter.set_size_inches(5.5,11)
-    figouter.suptitle("Field Magnitude outside 2.4 m")
 
     outer_roi=1.5
     inner_roi=1.2
@@ -795,7 +794,7 @@ if (options.planes):
     y2d_masked=np.ma.masked_where(mask,y2d)
     im=axouter1.pcolor(x2d_masked,y2d_masked,bmod)
 
-    figtest.colorbar(im,ax=axouter1,format='%.3e',label="Tesla")
+    figouter.colorbar(im,ax=axouter1,format='%.3e',label="Tesla")
     axouter1.set_xlabel("x (m)")
     axouter1.set_ylabel("y (m)")
     axouter1.set_aspect('equal', adjustable='datalim')
@@ -808,7 +807,7 @@ if (options.planes):
     z2d_masked=np.ma.masked_where(mask,z2d)
     im=axouter2.pcolor(z2d_masked,x2d_masked,bmod)
     
-    figtest.colorbar(im,ax=axouter2,format='%.3e',label="Tesla")
+    figouter.colorbar(im,ax=axouter2,format='%.3e',label="Tesla")
     axouter2.set_xlabel("z (m)")
     axouter2.set_ylabel("x (m)")
     axouter2.set_aspect('equal', adjustable='datalim')
@@ -824,7 +823,7 @@ if (options.planes):
     bmod_masked=np.ma.masked_where(mask,bmod)
     im=axouter3.pcolor(z2d_masked,y2d_masked,bmod)
     
-    figtest.colorbar(im,ax=axouter3,format='%.3e',label="Tesla")
+    figouter.colorbar(im,ax=axouter3,format='%.3e',label="Tesla")
     axouter3.set_xlabel("z (m)")
     axouter3.set_ylabel("y (m)")
     axouter3.set_aspect('equal', adjustable='datalim')
